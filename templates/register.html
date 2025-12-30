@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Registration</title>
+  <link rel="stylesheet" href="../static/register.css">
+</head>
+<body>
+  <div class="mobile-frame">
+    <!-- Splash Screen -->
+    <div class="splash-container" id="splashScreen">
+      <div class="overlay"></div>
+      <div class="splash-content">
+        <img src="../static/images/FireTackrlogo.png" alt="BFP Logo" class="logo" />
+      </div>
+    </div>
+
+    <!-- Registration Form -->
+    <div class="registration-container" id="registerContainer">
+      <h2>Sign In</h2>
+      <form id="registerForm">
+        <input type="text" name="fullname" placeholder="Full Name" required />
+        <input type="text" name="address" placeholder="Address" required />
+        <input type="tel" name="mobile" placeholder="Mobile Number" required />
+        <input type="email" name="gmail" id="gmailInput" placeholder="Gmail Address" required />
+
+        <div id="otpSection" style="display: none;">
+          <input type="text" id="otpInput" placeholder="Enter OTP" />
+          <button type="button" id="verifyOtpBtn">Verify OTP</button>
+        </div>
+
+        <button type="submit" id="sendOtpBtn">Send OTP</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="../js/register.js"></script>
+</body>
+

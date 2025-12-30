@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Registration Success</title>
+
+  <!-- Auto redirect to /alert after 2 seconds -->
+ <meta http-equiv="refresh" content="2;url=userDashboard.html" />
+
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body, html {
+      height: 100%;
+      background-color: #c9c2c2;
+      font-family: 'Segoe UI', 'Roboto', 'Arial', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .mobile-frame {
+      width: 320px;
+      height: 600px;
+      background-color: #ffffff;
+      border: 6px solid #800000;
+      border-radius: 35px;
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 30px 20px;
+      text-align: center;
+    }
+
+    h2 {
+      color: #800000;
+      font-size: 18px;
+      margin-bottom: 25px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    a {
+      display: inline-block;
+      background-color: #800000;
+      color: white;
+      text-decoration: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-size: 14px;
+      transition: background-color 0.3s;
+    }
+
+    a:hover {
+      background-color: #a30000;
+    }
+  </style>
+</head>
+<body>
+  <div class="mobile-frame">
+    <h2>Account Successfully Verified and Registered!</h2>
+  </div>
+</body>
+</html>

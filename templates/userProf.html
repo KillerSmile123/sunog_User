@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile</title>
+    <link rel="stylesheet" href="../static/userProf.css">
+
+    
+     
+</head>
+
+   
+
+<body>
+
+    <div class="mobile-frame">
+        <div class="profile-container">
+
+        <div class="profile-image">
+            <img id="profilePic" src="../static/images/Fire (1).jpg" alt="Profile Picture">
+        </div>
+
+        <label for="uploadPic" class="upload-btn">Change Profile Picture</label>
+        <input type="file" id="uploadPic" accept="image/*" style="display:none;">
+
+        <h2 id="profileName">User Name</h2>
+
+        <div class="info-box">
+            <p><strong>Address:</strong> <span id="profileAddress"></span></p>
+            <p><strong>Email:</strong> <span id="profileGmail"></span></p>
+            <p><strong>Mobile:</strong> <span id="profileMobile"></span></p>
+        </div>
+    </div>
+
+    <button id="backBtn">Back</button>
+</div>
+
+
+
+<script src="../js/userProf.js"></script>
+</body>
+</html>

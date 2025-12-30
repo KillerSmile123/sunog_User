@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>F.I.R.E</title>
+  <link rel="stylesheet" href="../static/alert.css?v=4.2" />
+  
+</head>
+
+
+<body>
+
+  <!-- Top Navigation (No Dropdown) -->
+  <div class="top-nav">
+    <a href="../templates/userDashboard.html" class="back-arrow">⬅ Back</a>
+    <span>FIRE REPORT</span>
+  </div>
+
+  <!-- Alert Form -->
+  <div class="alert-container">
+    <h2 id="welcomeMessage">Welcome, !</h2>
+
+    <form id="alertForm" enctype="multipart/form-data">
+      <textarea name="description" placeholder="Describe the fire incident... (optional)"></textarea>
+
+      <label class="file-label" for="photo">📷 Upload Photo</label>
+      <input type="file" name="photo" id="photo" accept="image/*" />
+
+      <label class="file-label" for="video">🎥 Upload Video</label>
+      <input type="file" name="video" id="video" accept="video/*" />
+
+      <input type="hidden" id="latitude" name="latitude" />
+      <input type="hidden" id="longitude" name="longitude" />
+
+      <div class="preview" id="preview"></div>
+
+      <button type="submit">🔥 Send Fire Alert</button>
+    </form>
+  </div>
+
+  <script src="../js/alert.js"></script>
+
+</body>
+</html>

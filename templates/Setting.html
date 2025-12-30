@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings</title>
+    <link rel="stylesheet" href="../static/settings.css">
+</head>
+<body>
+
+    <header class="header">
+        <a href="userDashboard.html" class="back-arrow">⬅ Back</a>
+        <h2>User Settings</h2>
+    </header>
+
+    <div class="settings-container">
+
+        <!-- 1. Profile Settings -->
+        <section class="settings-group">
+            <h3 class="group-title">1. Profile Settings</h3>
+            <div class="group-content">
+                <button id="edit-name">Edit Name</button>
+                <button id="edit-email">Edit Email</button>
+                <button id="edit-phone">Edit Phone Number</button>
+                <button id="change-password">Change Password</button>
+                <button id="change-profile-picture">Change Profile Picture</button>
+            </div>
+        </section>
+
+        <!-- 2. Notification Settings -->
+        <section class="settings-group">
+            <h3 class="group-title">2. Notification Settings</h3>
+            <div class="group-content">
+                <label><input type="checkbox" id="enable-notifications"> Enable Notifications</label>
+                <label><input type="checkbox" id="fire-alerts"> Fire Alerts</label>
+                <label><input type="checkbox" id="sms-alerts"> SMS Alerts</label>
+                <label><input type="checkbox" id="sound-vibration"> Sound & Vibration</label>
+            </div>
+        </section>
+
+        <!-- 3. Location Settings -->
+        <section class="settings-group">
+            <h3 class="group-title">3. Location Settings</h3>
+            <div class="group-content">
+                <label><input type="checkbox" id="allow-gps"> Allow GPS Location</label>
+                <button id="set-home-address">Set Home Address</button>
+                <button id="set-default-location">Set Default Map Location</button>
+            </div>
+        </section>
+
+        <!-- 4. Appearance Settings -->
+        <section class="settings-group">
+            <h3 class="group-title">4. Appearance Settings</h3>
+            <div class="group-content">
+                <label><input type="checkbox" id="dark-mode"> Dark Mode</label>
+                <button id="font-size">Font Size</button>
+                <label><input type="checkbox" id="high-contrast"> High Contrast Mode</label>
+            </div>
+        </section>
+
+        <!-- 5. Privacy & Security -->
+        <section class="settings-group">
+            <h3 class="group-title">5. Privacy & Security</h3>
+            <div class="group-content">
+                <button id="clear-history">Clear Report History</button>
+                <button id="logout">Log Out</button>
+                <button id="delete-account" class="danger">Delete Account</button>
+            </div>
+        </section>
+
+        <!-- 6. Help & Support -->
+        <section class="settings-group">
+            <h3 class="group-title">6. Help & Support</h3>
+            <div class="group-content">
+                <button id="contact-support">Contact Support</button>
+                <button id="faq">FAQ</button>
+                <button id="app-version">App Version</button>
+                <button id="about">About</button>
+            </div>
+        </section>
+
+        <!-- 7. Fire Safety Tools -->
+        <section class="settings-group">
+            <h3 class="group-title">7. Fire Safety Tools</h3>
+            <div class="group-content">
+                <button id="emergency-numbers">Emergency Numbers</button>
+                <button id="fire-safety-tips">Fire Safety Tips</button>
+                <button id="download-contacts">Download Contacts (PDF)</button>
+                <button id="family-group">Family Emergency Group</button>
+                <button id="favorite-stations">Favorite Fire Stations</button>
+            </div>
+        </section>
+
+    </div>
+
+    <script src="../js/settings.js"></script>
+</body>
+</html>
