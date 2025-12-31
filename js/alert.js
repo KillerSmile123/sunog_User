@@ -73,7 +73,7 @@ window.onload = function () {
 // Function to check if server is reachable
 async function checkServerConnection() {
   try {
-    const response = await fetch("http://127.0.0.1:8000/health", {
+    const response = await fetch("http://127.0.0.1:5000/health", {
       method: "GET",
       timeout: 5000
     });
@@ -160,7 +160,7 @@ document.addEventListener("DOMContentLoaded", () => {
       console.log("Sending alert to server...");
       const formData = new FormData(form);
       
-      const response = await fetch("http://127.0.0.1:8000/send_alert", {
+      const response = await fetch("http://127.0.0.1:5000/send_alert", {
         method: "POST",
         body: formData,
         credentials: "include"

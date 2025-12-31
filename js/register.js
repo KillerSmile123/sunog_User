@@ -1,3 +1,5 @@
+const API_BASE = "http://127.0.0.1:5000"; // Change to Railway URL when deployed
+
 // --- Splash Screen Transition ---
 window.addEventListener('load', () => {
   setTimeout(() => {
@@ -11,11 +13,7 @@ window.addEventListener('load', () => {
   }, 2000);
 });
 
-// --- OTP & Registration Code ---
-
-let savedOtp = '';
-let currentEmail = '';
-
+// --- Loading Helpers ---
 function showLoading(buttonId, text = 'Loading...') {
     const button = document.getElementById(buttonId);
     button.disabled = true;
@@ -28,15 +26,43 @@ function hideLoading(buttonId, text) {
     button.textContent = text;
 }
 
-document.getElementById('registerForm').addEventListener('submit', async function (e) {
-    e.preventDefault();
-    const gmail = document.getElementById('gmailInput').value;
+// --- OTP Cooldown ---
+let otpCooldown = false;
 
-    if (!gmail) { alert('Please enter your Gmail address'); return; }
+function startOtpCooldown(buttonId, seconds = 60) {
+    otpCooldown = true;
+    const button = document.getElementById(buttonId);
+    let countdown = seconds;
+    button.disabled = true;
+    button.textContent = `Resend OTP in ${countdown}s`;
+
+    const interval = setInterval(() => {
+        countdown--;
+        button.textContent = `Resend OTP in ${countdown}s`;
+        if (countdown <= 0) {
+            clearInterval(interval);
+            button.disabled = false;
+            button.textContent = "Send OTP";
+            otpCooldown = false;
+        }
+    }, 1000);
+}
+
+// --- Send OTP ---
+document.getElementById('sendOtpBtn').addEventListener('click', async function(e) {
+    e.preventDefault();
+
+    if (otpCooldown) return;
+
+    const gmail = document.getElementById('gmailInput').value;
+    if (!gmail) {
+        alert('Please enter your Gmail address');
+        return;
+    }
 
     showLoading('sendOtpBtn', 'Sending OTP...');
     try {
-        const response = await fetch('http://127.0.0.1:8000/send_gmail_otp', {
+        const response = await fetch(`${API_BASE}/send_otp`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ gmail })
@@ -45,69 +71,71 @@ document.getElementById('registerForm').addEventListener('submit', async functio
         const data = await response.json();
 
         if (response.ok) {
-            savedOtp = data.otp;
-            alert("OTP sent! Check your Gmail.");
+            alert("OTP sent! Check your email.");
             document.getElementById('otpSection').style.display = 'block';
-            document.getElementById('sendOtpBtn').style.display = 'none';
+            startOtpCooldown('sendOtpBtn', 60); // start 60s cooldown
         } else {
             alert(data.message || "Failed to send OTP.");
         }
     } catch (error) {
-        alert("Error sending OTP.");
+        console.error(error);
+        alert("Error sending OTP. Check backend or network.");
     } finally {
         hideLoading('sendOtpBtn', 'Send OTP');
     }
 });
 
-// --- OTP Verification & Registration ---
+// --- Verify OTP & Register User ---
+// --- Verify OTP & Register User ---
 document.getElementById('verifyOtpBtn').addEventListener('click', async function () {
-    const userOtp = document.getElementById('otpInput').value;
+    const otp = document.getElementById('otpInput').value;
+    if (!otp) { alert('Please enter OTP'); return; }
 
-    if (!userOtp) { alert('Please enter OTP'); return; }
+    showLoading('verifyOtpBtn', 'Registering...');
 
-    if (userOtp === savedOtp) {
-        showLoading('verifyOtpBtn', 'Registering...');
+    try {
+        const formData = new FormData(document.getElementById('registerForm'));
 
-        try {
-            const formData = new FormData(document.getElementById('registerForm'));
+        // Use the gmail from the input directly to ensure consistency
+        const gmail = document.getElementById('gmailInput').value;
 
-            const userData = {
-                fullname: formData.get('fullname'),
-                address: formData.get('address'),
-                mobile: formData.get('mobile'),
-                gmail: formData.get('gmail'),
-            };
+        const userData = {
+            fullname: formData.get('fullname'),
+            address: formData.get('address'),
+            mobile: formData.get('mobile'),
+            gmail: gmail,  // ← Changed to use the input value directly
+            otp: otp
+        };
 
-            // Save to localStorage (correct location)
-            localStorage.setItem('address', userData.address);
-            localStorage.setItem('gmail', userData.gmail);
-            localStorage.setItem('mobile', userData.mobile);
+        console.log("Sending registration data:", userData); // Debug log
+
+        const response = await fetch(`${API_BASE}/register`, {
+            method: 'POST',
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(userData)
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            // Save to localStorage
             localStorage.setItem('fullName', userData.fullname);
+            localStorage.setItem('address', userData.address);
+            localStorage.setItem('mobile', userData.mobile);
+            localStorage.setItem('gmail', userData.gmail);
 
-            const response = await fetch('http://127.0.0.1:8000/register', {
-                method: 'POST',
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(userData)
-            });
-
-            const result = await response.json();
-
-            if (response.ok) {
-                alert("Registered successfully!");
-                window.location.href = "userDashboard.html";
-            } else {
-                alert(result.message || "Registration failed.");
-            }
-
-        } catch (error) {
-            console.error(error);
-            alert("Registration failed.");
-        } finally {
-            hideLoading('verifyOtpBtn', 'Verify OTP');
+            alert("Registration successful!");
+            window.location.href = "userDashboard.html";
+        } else {
+            alert(result.message || "Registration failed.");
+            console.error("Registration error:", result); // Debug log
         }
 
-    } else {
-        alert("Incorrect OTP. Try again.");
+    } catch (error) {
+        console.error(error);
+        alert("Registration failed. Check backend or network.");
+    } finally {
+        hideLoading('verifyOtpBtn', 'Verify OTP');
     }
 });
 
