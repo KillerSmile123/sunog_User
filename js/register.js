@@ -1,4 +1,4 @@
-const API_BASE = "http://127.0.0.1:5000"; // Change to Railway URL when deployed
+const API_BASE = "https://backend-3-hqil.onrender.com"; // Updated to Render URL
 
 // --- Splash Screen Transition ---
 window.addEventListener('load', () => {
@@ -65,6 +65,7 @@ document.getElementById('sendOtpBtn').addEventListener('click', async function(e
         const response = await fetch(`${API_BASE}/send_otp`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            credentials: 'include', // Added for session support
             body: JSON.stringify({ gmail })
         });
 
@@ -85,7 +86,6 @@ document.getElementById('sendOtpBtn').addEventListener('click', async function(e
     }
 });
 
-// --- Verify OTP & Register User ---
 // --- Verify OTP & Register User ---
 document.getElementById('verifyOtpBtn').addEventListener('click', async function () {
     const otp = document.getElementById('otpInput').value;
@@ -112,6 +112,7 @@ document.getElementById('verifyOtpBtn').addEventListener('click', async function
         const response = await fetch(`${API_BASE}/register`, {
             method: 'POST',
             headers: { "Content-Type": "application/json" },
+            credentials: 'include', // Added for session support
             body: JSON.stringify(userData)
         });
 
