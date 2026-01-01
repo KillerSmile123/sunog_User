@@ -1,3 +1,27 @@
+
+
+const API_BASE_URL = "https://backend-3-hqil.onrender.com/";
+
+fetch(`${API_BASE_URL}/api/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+        email,
+        password
+    })
+})
+.then(res => res.json())
+.then(data => {
+    if (data.success) {
+        window.location.href = "/register.html";
+    } else {
+        alert(data.message);
+    }
+});
+
+
+
+
 // ==============================
 // USER AUTHENTICATION & REGISTRATION SCRIPT
 // ==============================
