@@ -1,4 +1,9 @@
 // ==============================
+// API CONFIGURATION
+// ==============================
+const API_URL = 'https://backend-3-hqil.onrender.com';
+
+// ==============================
 // USER AUTHENTICATION & REGISTRATION SCRIPT
 // ==============================
 
@@ -63,9 +68,10 @@ async function loginUser(event) {
   const mobile = document.getElementById("mobile").value;
 
   try {
-    const response = await fetch("http://localhost:5000/user/login", {
+    const response = await fetch(`${API_URL}/user/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: 'include', // Important for cookies/sessions
       body: JSON.stringify({ gmail, mobile })
     });
 
@@ -86,7 +92,7 @@ async function loginUser(event) {
 // ==============================
 // REGISTER FUNCTION
 // ==============================
-function registerUser(event) {
+async function registerUser(event) {
   event.preventDefault();
 
   const fullname = document.querySelector("input[name='fullname']").value;
@@ -99,12 +105,31 @@ function registerUser(event) {
     return;
   }
 
-  // Save user info locally
-  const user = { fullname, address, gmail, mobile };
-  localStorage.setItem("user_info", JSON.stringify(user));
+  try {
+    // Send to backend
+    const response = await fetch(`${API_URL}/user/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: 'include',
+      body: JSON.stringify({ fullname, address, gmail, mobile })
+    });
 
-  alert("Registration successful! Please login.");
-  window.location.href = "login.html";
+    const data = await response.json();
+    
+    if (response.ok) {
+      // Save user info locally
+      const user = { fullname, address, gmail, mobile };
+      localStorage.setItem("user_info", JSON.stringify(user));
+      
+      alert("Registration successful! Please login.");
+      window.location.href = "login.html";
+    } else {
+      alert(data.message || "Registration failed!");
+    }
+  } catch (err) {
+    console.error(err);
+    alert("Something went wrong. Try again!");
+  }
 }
 
 // ==============================
