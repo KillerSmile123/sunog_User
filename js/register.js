@@ -65,7 +65,7 @@ document.getElementById('sendOtpBtn').addEventListener('click', async function(e
         const response = await fetch(`${API_BASE}/send_otp`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            credentials: 'include', // Added for session support
+            credentials: 'include',
             body: JSON.stringify({ gmail })
         });
 
@@ -74,7 +74,7 @@ document.getElementById('sendOtpBtn').addEventListener('click', async function(e
         if (response.ok) {
             alert("OTP sent! Check your email.");
             document.getElementById('otpSection').style.display = 'block';
-            startOtpCooldown('sendOtpBtn', 60); // start 60s cooldown
+            startOtpCooldown('sendOtpBtn', 60);
         } else {
             alert(data.message || "Failed to send OTP.");
         }
@@ -95,30 +95,26 @@ document.getElementById('verifyOtpBtn').addEventListener('click', async function
 
     try {
         const formData = new FormData(document.getElementById('registerForm'));
-
-        // Use the gmail from the input directly to ensure consistency
         const gmail = document.getElementById('gmailInput').value;
 
         const userData = {
             fullname: formData.get('fullname'),
             address: formData.get('address'),
             mobile: formData.get('mobile'),
-            gmail: gmail,  // ← Changed to use the input value directly
+            gmail: gmail,
             otp: otp
         };
 
-        console.log("Sending registration data:", userData); // Debug log
+        console.log("Sending registration data:", userData);
 
-        const response = await fetch("https://backend-3-hqil.onrender.com/send_otp", {
+        const response = await fetch(`${API_BASE}/register`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({
-                email: email
-            })
-        })
-
+            credentials: 'include',
+            body: JSON.stringify(userData)
+        });
 
         const result = await response.json();
 
@@ -133,7 +129,7 @@ document.getElementById('verifyOtpBtn').addEventListener('click', async function
             window.location.href = "userDashboard.html";
         } else {
             alert(result.message || "Registration failed.");
-            console.error("Registration error:", result); // Debug log
+            console.error("Registration error:", result);
         }
 
     } catch (error) {
