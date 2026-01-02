@@ -109,12 +109,16 @@ document.getElementById('verifyOtpBtn').addEventListener('click', async function
 
         console.log("Sending registration data:", userData); // Debug log
 
-        const response = await fetch(`${API_BASE}/register`, {
-            method: 'POST',
-            headers: { "Content-Type": "application/json" },
-            credentials: 'include', // Added for session support
-            body: JSON.stringify(userData)
-        });
+        const response = await fetch("https://backend-3-hqil.onrender.com/send_otp", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                email: email
+            })
+        })
+
 
         const result = await response.json();
 
