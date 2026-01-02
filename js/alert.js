@@ -1,5 +1,3 @@
-const API_BASE = "https://backend-3-hqil.onrender.com"; // Updated backend URL
-
 let gpsReady = false;
 
 // Storage management functions
@@ -75,9 +73,9 @@ window.onload = function () {
 // Function to check if server is reachable
 async function checkServerConnection() {
   try {
-    const response = await fetch(`${API_BASE}/health`, {
+    const response = await fetch("http://127.0.0.1:5000/health", {
       method: "GET",
-      credentials: 'include'
+      timeout: 5000
     });
     return response.ok;
   } catch (error) {
@@ -132,7 +130,7 @@ document.addEventListener("DOMContentLoaded", () => {
       console.log("Checking server connection...");
       const serverReachable = await checkServerConnection();
       if (!serverReachable) {
-        throw new Error("Cannot connect to server. Please check your internet connection and try again.");
+        throw new Error("Cannot connect to server. Please make sure your Flask server is running on http://127.0.0.1:8000");
       }
 
       // Prepare local alert object for localStorage
@@ -162,7 +160,7 @@ document.addEventListener("DOMContentLoaded", () => {
       console.log("Sending alert to server...");
       const formData = new FormData(form);
       
-      const response = await fetch(`${API_BASE}/send_alert`, {
+      const response = await fetch("http://127.0.0.1:5000/send_alert", {
         method: "POST",
         body: formData,
         credentials: "include"
@@ -242,9 +240,9 @@ document.addEventListener("DOMContentLoaded", () => {
       
       // Provide specific error messages
       if (error.name === 'TypeError' && error.message.includes('fetch')) {
-        alert("⚠️ Network Error: Cannot connect to the server. Please check your internet connection and try again.");
+        alert("⚠️ Network Error: Cannot connect to the server. Please check:\n• Is your Flask server running?\n• Is it running on http://127.0.0.1:8000?\n• Check your internet connection");
       } else if (error.message.includes('CORS')) {
-        alert("⚠️ CORS Error: Server blocked the request. Please try again later.");
+        alert("⚠️ CORS Error: Server blocked the request. Check your Flask CORS settings.");
       } else {
         alert(`⚠️ Error: ${error.message}`);
       }
@@ -255,3 +253,4 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 });
+
