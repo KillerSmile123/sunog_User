@@ -1,0 +1,214 @@
+/* Override and extend alert.css for view report */
+.alert-container {
+  max-height: 100vh;
+  overflow-y: auto;
+  padding-bottom: 80px;
+}
+
+.reports-list {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.report-card {
+  width: 100%;
+  background-color: #f9f9f9;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.report-card:hover {
+  border-color: #800000;
+  box-shadow: 0 4px 8px rgba(128, 0, 0, 0.1);
+}
+
+.report-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.report-id {
+  font-weight: bold;
+  color: #333;
+  font-size: 14px;
+}
+
+.status-badge {
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.status-pending {
+  background-color: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffc107;
+}
+
+.status-received {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #28a745;
+}
+
+.report-date {
+  font-size: 12px;
+  color: #666;
+}
+
+.report-description {
+  font-size: 13px;
+  color: #555;
+  line-height: 1.4;
+  margin: 5px 0;
+}
+
+.report-location {
+  font-size: 12px;
+  color: #777;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.report-media {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.media-indicator {
+  font-size: 11px;
+  background-color: #e8e8e8;
+  padding: 4px 8px;
+  border-radius: 4px;
+  color: #333;
+}
+
+.no-reports {
+  text-align: center;
+  padding: 40px 20px;
+  color: #666;
+}
+
+.no-reports-icon {
+  font-size: 48px;
+  margin-bottom: 15px;
+}
+
+.report-details-modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  justify-content: center;
+  align-items: center;
+}
+
+.report-details-modal.active {
+  display: flex;
+}
+
+.modal-content {
+  background-color: white;
+  border-radius: 8px;
+  padding: 20px;
+  max-width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  width: 100%;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #800000;
+}
+
+.modal-close {
+  font-size: 24px;
+  cursor: pointer;
+  color: #666;
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+.modal-detail-row {
+  margin-bottom: 15px;
+}
+
+.modal-detail-label {
+  font-weight: bold;
+  color: #800000;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.modal-detail-value {
+  color: #333;
+  font-size: 14px;
+  margin-top: 5px;
+  line-height: 1.5;
+}
+
+.media-gallery {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.media-item {
+  max-width: 100px;
+  max-height: 100px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.filter-container {
+  width: 100%;
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.filter-btn {
+  padding: 8px 16px;
+  border: 2px solid #ddd;
+  background-color: white;
+  color: #333;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.3s;
+}
+
+.filter-btn.active {
+  background-color: #800000;
+  color: white;
+  border-color: #800000;
+}
+
+.filter-btn:hover {
+  border-color: #800000;
+}
