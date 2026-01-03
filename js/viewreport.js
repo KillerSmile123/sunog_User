@@ -8,7 +8,36 @@ async function getAddressFromCoordinates(lat, lon) {
   try {
     const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
     const data = await response.json();
-    return data.address?.city || data.address?.state || `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+    const address = data.address || {};
+    
+    // Build complete address: Barangay, City, Province
+    const addressParts = [];
+    
+    // Add village/barangay if available
+    if (address.village) {
+      addressParts.push(address.village);
+    } else if (address.suburb) {
+      addressParts.push(address.suburb);
+    }
+    
+    // Add city/town
+    if (address.city) {
+      addressParts.push(address.city);
+    } else if (address.town) {
+      addressParts.push(address.town);
+    }
+    
+    // Add state/province
+    if (address.state) {
+      addressParts.push(address.state);
+    }
+    
+    // Return formatted address or coordinates if no address found
+    if (addressParts.length > 0) {
+      return addressParts.join(", ");
+    }
+    
+    return `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
   } catch (error) {
     console.log("Could not get address, using coordinates");
     return `${lat.toFixed(4)}, ${lon.toFixed(4)}`;

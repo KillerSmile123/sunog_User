@@ -230,9 +230,8 @@ document.addEventListener("DOMContentLoaded", () => {
           // Continue anyway since server saved successfully
         }
 
-        alert("🔥 Fire alert sent successfully!");
         form.reset();
-        setTimeout(() => window.location.href = "report submit.html", 500);
+        window.location.href = "report submit.html";
       } else {
         throw new Error(`Server error (${response.status}): ${result?.message || 'Unknown error'}`);
       }
