@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Report Confirmed</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #e0e0e0; /* Light grey background like the image */
+        }
+        .confirmation-card {
+            background: white;
+            padding: 40px 30px;
+            border-radius: 24px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 90%;
+            max-width: 380px;
+            border: 4px solid #800000; /* Dark red border from the image */
+        }
+        /* The Red Circle and White Checkmark */
+        .check-circle {
+            width: 80px;
+            height: 80px;
+            background-color: #b30000; /* Deep red circle */
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0 auto 20px;
+            color: white;
+            font-size: 40px;
+            font-weight: bold;
+        }
+        h1 {
+            color: #000;
+            font-size: 26px;
+            margin: 0 0 15px 0;
+            font-weight: 700;
+        }
+        p {
+            color: #333;
+            font-size: 18px;
+            line-height: 1.4;
+            margin-bottom: 30px;
+        }
+        .highlight {
+            color: #800000; /* Matching red for the text */
+            font-weight: bold;
+        }
+        /* The View Progress Button */
+        .btn {
+            display: block;
+            background-color: #800000;
+            color: white;
+            text-decoration: none;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+        .btn:hover {
+            background-color: #a00000;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="confirmation-card">
+        <div class="check-circle">✓</div>
+        <h1>Report Submitted</h1>
+        <p>Your report has been sent to the <br><span class="highlight">Fire Department</span>.</p>
+        <a href="#" class="btn">View Progress</a>
+    </div>
+
+</body>
+</html>

@@ -232,7 +232,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         alert("🔥 Fire alert sent successfully!");
         form.reset();
-        setTimeout(() => window.location.href = "alerts.html", 500);
+        setTimeout(() => window.location.href = "report submit.html", 500);
       } else {
         throw new Error(`Server error (${response.status}): ${result?.message || 'Unknown error'}`);
       }
