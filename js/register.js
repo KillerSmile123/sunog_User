@@ -86,6 +86,8 @@ document.getElementById('sendOtpBtn').addEventListener('click', async function(e
     }
 });
 
+// Find this section in register.js and REPLACE it:
+
 // --- Verify OTP & Register User ---
 document.getElementById('verifyOtpBtn').addEventListener('click', async function () {
     const otp = document.getElementById('otpInput').value;
@@ -119,11 +121,14 @@ document.getElementById('verifyOtpBtn').addEventListener('click', async function
         const result = await response.json();
 
         if (response.ok) {
-            // Save to localStorage
+            // ✅ SAVE user_id to localStorage
+            localStorage.setItem('userId', result.user_id); // ✅ NEW LINE
             localStorage.setItem('fullName', userData.fullname);
             localStorage.setItem('address', userData.address);
             localStorage.setItem('mobile', userData.mobile);
             localStorage.setItem('gmail', userData.gmail);
+
+            console.log("✅ User registered with ID:", result.user_id); // ✅ NEW LINE
 
             alert("Registration successful!");
             window.location.href = "userDashboard.html";

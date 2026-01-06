@@ -36,6 +36,8 @@ function cleanupOldAlerts(maxAlerts = 5) {
   return false;
 }
 
+// Find the window.onload section and ADD this:
+
 window.onload = function () {
   // Get GPS coordinates
   if (navigator.geolocation) {
@@ -61,6 +63,7 @@ window.onload = function () {
 
   // ✅ Auto-fill reporter name from localStorage
   const fullName = localStorage.getItem('fullName');
+  const userId = localStorage.getItem('userId'); // ✅ NEW LINE
   
   // Set welcome message
   const welcomeMessage = document.getElementById('welcomeMessage');
@@ -73,6 +76,22 @@ window.onload = function () {
   if (reporterNameInput && fullName) {
     reporterNameInput.value = fullName;
     console.log("Reporter name auto-filled:", fullName);
+  }
+
+  // ✅ NEW: Create hidden user_id field if it doesn't exist
+  if (userId) {
+    let userIdInput = document.getElementById('user_id');
+    if (!userIdInput) {
+      userIdInput = document.createElement('input');
+      userIdInput.type = 'hidden';
+      userIdInput.id = 'user_id';
+      userIdInput.name = 'user_id';
+      document.getElementById('alertForm').appendChild(userIdInput);
+    }
+    userIdInput.value = userId;
+    console.log("User ID set:", userId);
+  } else {
+    console.warn("⚠️ No user_id found in localStorage!");
   }
 
   // Initialize user object if not exists
