@@ -1,3 +1,5 @@
+// ✅ DEFINE API_BASE AT THE TOP
+const API_BASE = "https://backend-3-hqil.onrender.com";
 
 // -------------------------------
 // 1. Map Initialization at Oroquieta City
@@ -129,18 +131,22 @@ async function checkNotifications() {
             return;
         }
         
+        console.log(`🔔 Checking notifications for user: ${userId}`);
+        
         const response = await fetch(`${API_BASE}/get_user_notifications/${userId}`, {
             method: 'GET',
             credentials: 'include'
         });
         
         if (!response.ok) {
-            throw new Error('Failed to fetch notifications');
+            throw new Error(`Failed to fetch notifications: ${response.status}`);
         }
         
         const data = await response.json();
         
         if (data.notifications && Array.isArray(data.notifications)) {
+            console.log(`📬 Found ${data.notifications.length} notifications`);
+            
             // Sort by timestamp, newest first
             const sortedNotifications = data.notifications.sort((a, b) => 
                 new Date(b.timestamp) - new Date(a.timestamp)
@@ -149,6 +155,7 @@ async function checkNotifications() {
             // Show only unread notifications
             sortedNotifications.forEach(notification => {
                 if (!notification.read) {
+                    console.log(`✅ Showing notification: ${notification.title}`);
                     showNotification(notification);
                     // Mark as read
                     markNotificationAsRead(notification.id);
@@ -207,5 +214,5 @@ document.addEventListener('DOMContentLoaded', () => {
     // Start notification system
     initializeNotifications();
     
-    console.log('Dashboard initialized with real-time notifications');
+    console.log('✅ Dashboard initialized with real-time notifications');
 });
