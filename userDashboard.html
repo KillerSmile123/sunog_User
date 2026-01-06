@@ -20,7 +20,8 @@
 
         #map {
             width: 100%;
-            height: 100%;
+            height: calc(100% - 60px);
+            margin-top: 60px;
         }
 
         /* Top Bar */
@@ -54,6 +55,40 @@
         .logo-icon {
             width: 100px;
             height: 90px;
+        }
+
+        /* Notification Bell */
+        .notification-bell {
+            position: absolute;
+            right: 60px;
+            cursor: pointer;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            transition: transform 0.2s;
+        }
+
+        .notification-bell:hover {
+            transform: scale(1.1);
+        }
+
+        .notification-bell .badge {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background-color: #ff0000;
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 11px;
+            font-weight: bold;
+            display: none;
+            align-items: center;
+            justify-content: center;
         }
 
         /* Burger Menu */
@@ -100,6 +135,159 @@
             background-color: #a30000;
         }
 
+        /* Notification Panel (Dropdown) */
+        .notification-panel {
+            position: absolute;
+            top: 60px;
+            right: 15px;
+            width: 350px;
+            max-height: 500px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            overflow: hidden;
+            z-index: 700;
+        }
+
+        .notification-panel-header {
+            background-color: #800000;
+            color: white;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .notification-panel-header h3 {
+            margin: 0;
+            font-size: 16px;
+        }
+
+        .mark-all-btn {
+            background-color: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .mark-all-btn:hover {
+            background-color: rgba(255,255,255,0.3);
+        }
+
+        #notification-list {
+            max-height: 400px;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .notification-item {
+            background-color: #f9f9f9;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 6px;
+            border-left: 4px solid #800000;
+            transition: background-color 0.2s;
+        }
+
+        .notification-item.unread {
+            background-color: #fff5f5;
+            border-left-color: #ff0000;
+        }
+
+        .notification-item.read {
+            opacity: 0.7;
+        }
+
+        .notification-item:hover {
+            background-color: #f0f0f0;
+        }
+
+        .notification-header-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .notification-type {
+            background-color: #800000;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            text-transform: uppercase;
+        }
+
+        .notification-type.warning {
+            background-color: #ff9800;
+        }
+
+        .notification-type.success {
+            background-color: #4caf50;
+        }
+
+        .notification-type.error {
+            background-color: #f44336;
+        }
+
+        .notification-time {
+            font-size: 11px;
+            color: #666;
+        }
+
+        .notification-content p {
+            margin: 8px 0;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .notification-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 8px;
+        }
+
+        .notification-actions button {
+            padding: 5px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .mark-read-btn {
+            background-color: #800000;
+            color: white;
+        }
+
+        .mark-read-btn:hover {
+            background-color: #a30000;
+        }
+
+        .delete-btn {
+            background-color: #ccc;
+            color: #333;
+        }
+
+        .delete-btn:hover {
+            background-color: #999;
+        }
+
+        .no-notifications {
+            text-align: center;
+            padding: 30px;
+            color: #999;
+        }
+
+        .error {
+            text-align: center;
+            padding: 20px;
+            color: #ff0000;
+        }
+
         /* Floating Fire Report Button */
         .fire-report-btn {
             position: absolute;
@@ -119,22 +307,7 @@
             box-shadow: 0 5px 12px rgba(255,0,0,0.4);
         }
 
-        @media (max-width: 600px) {
-            .fire-report-btn {
-                font-size: 16px;
-                padding: 12px 20px;
-            }
-        }
-
-        #map {
-        width: 100%;
-        height: calc(100% - 60px); /* 60px is the header height */
-        margin-top: 60px;          /* pushes map below header */
-         }
-
-
-
-        /* Notifications */
+        /* Toast Notifications (for live alerts) */
         .notification {
             position: absolute;
             right: 20px;
@@ -170,10 +343,25 @@
             z-index: 600;
         }
 
+        /* Mobile Responsive */
+        @media (max-width: 600px) {
+            .fire-report-btn {
+                font-size: 16px;
+                padding: 12px 20px;
+            }
+
+            .notification-panel {
+                width: calc(100vw - 30px);
+                right: 15px;
+            }
+            
+            .notification-bell {
+                right: 50px;
+                font-size: 20px;
+            }
+        }
     </style>
 </head>
-
-    
 
 <body>
 
@@ -186,6 +374,12 @@
         <div class="logo-section">
             <img src="images/FireTackrlogo.png" class="logo-icon" alt="Fire Logo">
             <div class="logo-text">FireTrackr</div>
+        </div>
+
+        <!-- Notification Bell Icon -->
+        <div class="notification-bell" onclick="toggleNotificationPanel()">
+            🔔
+            <span id="notification-badge" class="badge">0</span>
         </div>
 
         <!-- Burger -->
@@ -205,19 +399,30 @@
 
     </div>
 
+    <!-- Notification Panel (Dropdown when bell is clicked) -->
+    <div id="notification-panel" class="notification-panel" style="display: none;">
+        <div class="notification-panel-header">
+            <h3>Notifications</h3>
+            <button onclick="markAllAsRead()" class="mark-all-btn">Mark all read</button>
+        </div>
+        <div id="notification-list"></div>
+    </div>
+
     <!-- Floating Fire Report Button -->
     <a href="alert.html" class="fire-report-btn"> Report 🔥</a>
 
-    <!-- Notification Container -->
+    <!-- Toast Notification Container (for live pop-up alerts) -->
     <div class="notification-container" id="notification-container"></div>
 
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
+    <!-- Notification User Script -->
+    <script src="notificationuser.js"></script>
+
     <!-- Dashboard Script -->
     <script src="../js/dashboard.js"></script>
 
-
-
+   
 </body>
 </html>
