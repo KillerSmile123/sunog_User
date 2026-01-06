@@ -1,4 +1,4 @@
-const API_BASE = "https://backend-3-hqil.onrender.com"; // Updated backend URL
+const API_BASE = "https://backend-3-hqil.onrender.com";
 
 let gpsReady = false;
 
@@ -25,7 +25,7 @@ function cleanupOldAlerts(maxAlerts = 5) {
   try {
     const list = JSON.parse(localStorage.getItem("alertList")) || [];
     if (list.length > maxAlerts) {
-      const trimmedList = list.slice(-maxAlerts); // Keep only the last N alerts
+      const trimmedList = list.slice(-maxAlerts);
       localStorage.setItem("alertList", JSON.stringify(trimmedList));
       console.log(`Cleaned up alerts. Kept ${trimmedList.length} most recent alerts.`);
       return true;
@@ -37,6 +37,7 @@ function cleanupOldAlerts(maxAlerts = 5) {
 }
 
 window.onload = function () {
+  // Get GPS coordinates
   if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(
       function (position) {
@@ -58,17 +59,28 @@ window.onload = function () {
     alert("Geolocation is not supported by this browser.");
   }
 
+  // ✅ Auto-fill reporter name from localStorage
   const fullName = localStorage.getItem('fullName');
+  
+  // Set welcome message
+  const welcomeMessage = document.getElementById('welcomeMessage');
+  if (welcomeMessage) {
+    welcomeMessage.textContent = fullName ? `Welcome, ${fullName}!` : "Welcome!";
+  }
+
+  // ✅ Auto-fill the hidden reporter_name field
+  const reporterNameInput = document.getElementById('reporter_name');
+  if (reporterNameInput && fullName) {
+    reporterNameInput.value = fullName;
+    console.log("Reporter name auto-filled:", fullName);
+  }
+
+  // Initialize user object if not exists
   if (!localStorage.getItem("user")) {
     localStorage.setItem("user", JSON.stringify({
       name: fullName || "Unknown",
       contact: "09123456789"
     }));
-  }
-
-  const welcomeMessage = document.getElementById('welcomeMessage');
-  if (welcomeMessage) {
-    welcomeMessage.textContent = fullName ? `Welcome, ${fullName}!` : "Welcome!";
   }
 };
 
@@ -104,8 +116,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const currentStorageSize = getStorageSize();
       console.log(`Current localStorage usage: ${formatBytes(currentStorageSize)}`);
       
-      // If storage is getting full, clean up preemptively
-      if (currentStorageSize > 4 * 1024 * 1024) { // 4MB threshold
+      if (currentStorageSize > 4 * 1024 * 1024) {
         console.log("Storage is getting full, cleaning up...");
         cleanupOldAlerts(5);
       }
@@ -158,10 +169,15 @@ document.addEventListener("DOMContentLoaded", () => {
         user
       };
 
-      // Send form to Flask
-      console.log("Sending alert to server...");
+      // ✅ Log form data being sent
       const formData = new FormData(form);
-      
+      console.log("📤 Sending alert with:");
+      console.log("  - Reporter:", formData.get('reporter_name'));
+      console.log("  - Barangay:", formData.get('barangay'));
+      console.log("  - Description:", formData.get('description'));
+      console.log("  - Photo:", photo ? photo.name : 'None');
+      console.log("  - Video:", video ? video.name : 'None');
+
       const response = await fetch(`${API_BASE}/send_alert`, {
         method: "POST",
         body: formData,
@@ -169,7 +185,6 @@ document.addEventListener("DOMContentLoaded", () => {
       });
 
       console.log("Server response status:", response.status);
-      console.log("Server response headers:", response.headers);
 
       const contentType = response.headers.get("content-type");
       let result = null;
@@ -188,24 +203,21 @@ document.addEventListener("DOMContentLoaded", () => {
           const list = JSON.parse(localStorage.getItem("alertList")) || [];
           list.push(alertData);
           
-          // Try to save, if quota exceeded, manage storage
           try {
             localStorage.setItem("alertList", JSON.stringify(list));
           } catch (storageError) {
             if (storageError.name === 'QuotaExceededError') {
               console.log("Storage quota exceeded, cleaning up old alerts...");
               
-              // Remove oldest alerts until we can save (keep only last 10 alerts)
               let managedList = [...list];
               while (managedList.length > 10) {
-                managedList.shift(); // Remove oldest
+                managedList.shift();
               }
               
               try {
                 localStorage.setItem("alertList", JSON.stringify(managedList));
                 console.log(`Cleaned up storage. Kept ${managedList.length} most recent alerts.`);
               } catch (secondError) {
-                // If still failing, save without media
                 console.log("Still not enough space, saving without media...");
                 const lightweightAlert = {
                   id: alertData.id,
@@ -227,7 +239,6 @@ document.addEventListener("DOMContentLoaded", () => {
           }
         } catch (error) {
           console.error("Failed to save to localStorage:", error);
-          // Continue anyway since server saved successfully
         }
 
         form.reset();
@@ -239,7 +250,6 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (error) {
       console.error("Error details:", error);
       
-      // Provide specific error messages
       if (error.name === 'TypeError' && error.message.includes('fetch')) {
         alert("⚠️ Network Error: Cannot connect to the server. Please check your internet connection and try again.");
       } else if (error.message.includes('CORS')) {
@@ -248,7 +258,6 @@ document.addEventListener("DOMContentLoaded", () => {
         alert(`⚠️ Error: ${error.message}`);
       }
     } finally {
-      // Reset button state
       submitButton.textContent = originalButtonText;
       submitButton.disabled = false;
     }
