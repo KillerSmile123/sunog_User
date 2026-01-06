@@ -36,8 +36,6 @@ function cleanupOldAlerts(maxAlerts = 5) {
   return false;
 }
 
-// Find the window.onload section and ADD this:
-
 window.onload = function () {
   // Get GPS coordinates
   if (navigator.geolocation) {
@@ -61,9 +59,13 @@ window.onload = function () {
     alert("Geolocation is not supported by this browser.");
   }
 
-  // ✅ Auto-fill reporter name from localStorage
+  // ✅ Get user info from localStorage
   const fullName = localStorage.getItem('fullName');
-  const userId = localStorage.getItem('userId'); // ✅ NEW LINE
+  const userId = localStorage.getItem('userId');
+  
+  console.log("📱 User loaded from localStorage:");
+  console.log("   Name:", fullName);
+  console.log("   ID:", userId);
   
   // Set welcome message
   const welcomeMessage = document.getElementById('welcomeMessage');
@@ -71,27 +73,35 @@ window.onload = function () {
     welcomeMessage.textContent = fullName ? `Welcome, ${fullName}!` : "Welcome!";
   }
 
-  // ✅ Auto-fill the hidden reporter_name field
+  // ✅ Auto-fill the reporter_name field
   const reporterNameInput = document.getElementById('reporter_name');
   if (reporterNameInput && fullName) {
     reporterNameInput.value = fullName;
     console.log("Reporter name auto-filled:", fullName);
   }
 
-  // ✅ NEW: Create hidden user_id field if it doesn't exist
+  // ✅ CRITICAL: Set user_id field
   if (userId) {
     let userIdInput = document.getElementById('user_id');
+    
+    // If hidden input doesn't exist, create it
     if (!userIdInput) {
       userIdInput = document.createElement('input');
       userIdInput.type = 'hidden';
       userIdInput.id = 'user_id';
       userIdInput.name = 'user_id';
       document.getElementById('alertForm').appendChild(userIdInput);
+      console.log("✅ Created hidden user_id input field");
     }
+    
     userIdInput.value = userId;
-    console.log("User ID set:", userId);
+    console.log("✅ User ID field set to:", userId);
+    
+    // Verify it was set
+    console.log("   Verification - user_id field value:", document.getElementById('user_id').value);
   } else {
-    console.warn("⚠️ No user_id found in localStorage!");
+    console.error("❌ CRITICAL: No user_id found in localStorage!");
+    alert("⚠️ Warning: User ID not found. Alerts may not be linkable to your account.");
   }
 
   // Initialize user object if not exists
@@ -131,6 +141,13 @@ document.addEventListener("DOMContentLoaded", () => {
     submitButton.disabled = true;
 
     try {
+      // ✅ CRITICAL: Verify user_id before sending
+      const userIdField = document.getElementById('user_id');
+      if (!userIdField || !userIdField.value) {
+        throw new Error("User ID is missing. Please refresh the page and try again.");
+      }
+      console.log("✅ User ID verified before sending:", userIdField.value);
+
       // Check storage before starting
       const currentStorageSize = getStorageSize();
       console.log(`Current localStorage usage: ${formatBytes(currentStorageSize)}`);
@@ -188,14 +205,17 @@ document.addEventListener("DOMContentLoaded", () => {
         user
       };
 
-      // ✅ Log form data being sent
+      // ✅ Log form data being sent (INCLUDING user_id)
       const formData = new FormData(form);
-      console.log("📤 Sending alert with:");
+      console.log("📤 SENDING ALERT WITH:");
+      console.log("  - User ID:", formData.get('user_id'));
       console.log("  - Reporter:", formData.get('reporter_name'));
       console.log("  - Barangay:", formData.get('barangay'));
       console.log("  - Description:", formData.get('description'));
       console.log("  - Photo:", photo ? photo.name : 'None');
       console.log("  - Video:", video ? video.name : 'None');
+      console.log("  - Latitude:", latitude);
+      console.log("  - Longitude:", longitude);
 
       const response = await fetch(`${API_BASE}/send_alert`, {
         method: "POST",
@@ -203,14 +223,14 @@ document.addEventListener("DOMContentLoaded", () => {
         credentials: "include"
       });
 
-      console.log("Server response status:", response.status);
+      console.log("✅ Server response status:", response.status);
 
       const contentType = response.headers.get("content-type");
       let result = null;
 
       if (contentType && contentType.includes("application/json")) {
         result = await response.json();
-        console.log("Server response data:", result);
+        console.log("✅ Server response data:", result);
       } else {
         const textResult = await response.text();
         console.log("Server response (text):", textResult);
@@ -260,6 +280,7 @@ document.addEventListener("DOMContentLoaded", () => {
           console.error("Failed to save to localStorage:", error);
         }
 
+        console.log("✅ Alert submitted successfully! Redirecting...");
         form.reset();
         window.location.href = "report submit.html";
       } else {
@@ -267,7 +288,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
     } catch (error) {
-      console.error("Error details:", error);
+      console.error("❌ Error details:", error);
       
       if (error.name === 'TypeError' && error.message.includes('fetch')) {
         alert("⚠️ Network Error: Cannot connect to the server. Please check your internet connection and try again.");
