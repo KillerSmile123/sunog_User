@@ -12,12 +12,13 @@ let notificationCheckInterval = null;
 let lastCheckedTimestamp = null;
 
 // ========================================
-// FETCH NOTIFICATIONS
+// FETCH NOTIFICATIONS (FIXED ENDPOINT)
 // ========================================
 
 async function fetchNotifications(userId) {
   try {
-    const response = await fetch(`${NOTIFICATION_API_BASE}/api/notifications/?user_id=${userId}`, {
+    // ✅ FIXED: Use correct endpoint /get_user_notifications/<user_id>
+    const response = await fetch(`${NOTIFICATION_API_BASE}/get_user_notifications/${userId}`, {
       method: 'GET',
       credentials: 'include'
     });
@@ -27,6 +28,7 @@ async function fetchNotifications(userId) {
     }
 
     const data = await response.json();
+    console.log('📬 Fetched notifications:', data.notifications);
     return data.notifications || [];
   } catch (error) {
     console.error('Error fetching notifications:', error);
@@ -40,19 +42,13 @@ async function fetchNotifications(userId) {
 
 async function getUnreadNotificationCount(userId) {
   try {
-    const response = await fetch(`${NOTIFICATION_API_BASE}/api/notifications/count?user_id=${userId}`, {
-      method: 'GET',
-      credentials: 'include'
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
-    return data.unread_count || 0;
+    // ✅ Count unread notifications from the fetched data
+    const notifications = await fetchNotifications(userId);
+    const unreadCount = notifications.filter(n => !n.read).length;
+    console.log(`📊 Unread count: ${unreadCount}`);
+    return unreadCount;
   } catch (error) {
-    console.error('Error fetching unread count:', error);
+    console.error('Error getting unread count:', error);
     return 0;
   }
 }
@@ -63,17 +59,17 @@ async function getUnreadNotificationCount(userId) {
 
 async function markNotificationAsRead(notificationId) {
   try {
-    const response = await fetch(`${NOTIFICATION_API_BASE}/api/notifications/${notificationId}`, {
-      method: 'PATCH',
+    const response = await fetch(`${NOTIFICATION_API_BASE}/mark_notification_read/${notificationId}`, {
+      method: 'POST',
       credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ is_read: true })
+      headers: { 'Content-Type': 'application/json' }
     });
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
+    console.log(`✅ Notification ${notificationId} marked as read`);
     return await response.json();
   } catch (error) {
     console.error('Error marking notification as read:', error);
@@ -87,7 +83,7 @@ async function markNotificationAsRead(notificationId) {
 
 async function markAllNotificationsAsRead(userId) {
   try {
-    const response = await fetch(`${NOTIFICATION_API_BASE}/api/notifications/mark-all-read`, {
+    const response = await fetch(`${NOTIFICATION_API_BASE}/notifications/mark-all-read`, {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
@@ -98,6 +94,7 @@ async function markAllNotificationsAsRead(userId) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
+    console.log(`✅ All notifications marked as read`);
     return await response.json();
   } catch (error) {
     console.error('Error marking all as read:', error);
@@ -120,6 +117,7 @@ async function deleteNotification(notificationId) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
+    console.log(`🗑️ Notification ${notificationId} deleted`);
     return await response.json();
   } catch (error) {
     console.error('Error deleting notification:', error);
@@ -132,27 +130,39 @@ async function deleteNotification(notificationId) {
 // ========================================
 
 function updateNotificationBadge(count) {
-  const badgeEl = document.querySelector('.notification-badge');
+  // ✅ FIXED: Use correct selector from userDashboard.html
+  const badgeEl = document.getElementById('notification-badge');
   if (badgeEl) {
-    badgeEl.textContent = count;
-    badgeEl.style.display = count > 0 ? 'block' : 'none';
+    if (count > 0) {
+      badgeEl.textContent = count;
+      badgeEl.classList.add('active');
+    } else {
+      badgeEl.classList.remove('active');
+    }
+    console.log(`🔔 Badge updated: ${count}`);
   }
 }
 
 // ========================================
-// RENDER NOTIFICATIONS
+// RENDER NOTIFICATIONS IN PANEL
 // ========================================
 
-function renderNotifications(notifications) {
-  const container = document.getElementById('notifications-container');
-  if (!container) return;
+function renderNotificationsInPanel(notifications) {
+  // ✅ FIXED: Use correct container ID from userDashboard.html
+  const container = document.getElementById('notification-list');
+  if (!container) {
+    console.warn('notification-list container not found');
+    return;
+  }
+
+  console.log(`📋 Rendering ${notifications.length} notifications`);
 
   if (notifications.length === 0) {
     container.innerHTML = `
-      <div style="text-align: center; padding: 40px; color: #6c757d;">
-        <i class="fas fa-bell-slash" style="font-size: 48px; margin-bottom: 15px; opacity: 0.5;"></i>
-        <h3 style="margin: 0;">No Notifications</h3>
-        <p style="margin: 10px 0 0 0;">You're all caught up!</p>
+      <div class="no-notifications">
+        <div class="no-notifications-icon">🔔</div>
+        <p>No Notifications</p>
+        <span>You're all caught up!</span>
       </div>
     `;
     return;
@@ -160,38 +170,40 @@ function renderNotifications(notifications) {
 
   container.innerHTML = '';
   
-  notifications.forEach(notif => {
+  // Sort by timestamp, newest first
+  const sorted = notifications.sort((a, b) => 
+    new Date(b.timestamp) - new Date(a.timestamp)
+  );
+
+  sorted.forEach(notif => {
     const notifEl = document.createElement('div');
-    notifEl.className = `notification-item ${notif.is_read ? 'read' : 'unread'}`;
+    // ✅ FIXED: Use correct class names from userDashboard.html CSS
+    notifEl.className = `notification-item ${!notif.read ? 'unread' : ''}`;
     notifEl.dataset.id = notif.id;
     
     const typeIcon = getNotificationIcon(notif.type);
-    const typeColor = getNotificationColor(notif.type);
+    const typeClass = getNotificationTypeClass(notif.type);
+    
+    const timestamp = new Date(notif.timestamp);
+    const timeAgo = formatTime(timestamp);
     
     notifEl.innerHTML = `
-      <div class="notification-icon" style="background-color: ${typeColor};">
-        <i class="${typeIcon}"></i>
-      </div>
+      <div class="notification-icon ${typeClass}">${typeIcon}</div>
       <div class="notification-content">
-        <div class="notification-header">
-          <h4 class="notification-title">${notif.title}</h4>
-          ${!notif.is_read ? '<span class="unread-dot"></span>' : ''}
-        </div>
-        <p class="notification-message">${notif.message}</p>
-        <span class="notification-time">${formatTime(notif.created_at)}</span>
+        <p><strong>${notif.title}</strong></p>
+        <p>${notif.message}</p>
+        ${notif.alertLocation ? `<p style="font-size: 12px; color: #999;">📍 ${notif.alertLocation}</p>` : ''}
+        ${notif.resolveTime ? `<p style="font-size: 12px; font-weight: bold; color: #666;">🕒 Resolved at: ${notif.resolveTime}</p>` : ''}
+        <div class="notification-time">🕐 ${timeAgo}</div>
       </div>
       <div class="notification-actions">
-        ${!notif.is_read ? `<button class="mark-read-btn" onclick="handleMarkAsRead('${notif.id}')">
-          <i class="fas fa-check"></i>
-        </button>` : ''}
-        <button class="delete-btn" onclick="handleDeleteNotification('${notif.id}')">
-          <i class="fas fa-trash"></i>
-        </button>
+        ${!notif.read ? `<button class="action-btn-primary" onclick="handleMarkAsRead('${notif.id}', event)">Mark Read</button>` : ''}
+        <button class="action-btn-secondary" onclick="handleDeleteNotification('${notif.id}', event)">Delete</button>
       </div>
     `;
     
     // Click to mark as read
-    if (!notif.is_read) {
+    if (!notif.read) {
       notifEl.addEventListener('click', (e) => {
         if (!e.target.closest('.notification-actions')) {
           handleMarkAsRead(notif.id);
@@ -209,33 +221,38 @@ function renderNotifications(notifications) {
 
 function getNotificationIcon(type) {
   const icons = {
-    'info': 'fas fa-info-circle',
-    'success': 'fas fa-check-circle',
-    'warning': 'fas fa-exclamation-triangle',
-    'error': 'fas fa-times-circle'
+    'response': '💬',
+    'resolved': '✅',
+    'deleted': '🗑️',
+    'info': '🔔',
+    'success': '✅',
+    'warning': '⚠️',
+    'error': '❌'
   };
   return icons[type] || icons['info'];
 }
 
-function getNotificationColor(type) {
-  const colors = {
-    'info': '#3b82f6',
-    'success': '#10b981',
-    'warning': '#f59e0b',
-    'error': '#ef4444'
+function getNotificationTypeClass(type) {
+  const classes = {
+    'response': 'warning',
+    'resolved': 'success',
+    'deleted': 'error',
+    'info': '',
+    'success': 'success',
+    'warning': 'warning',
+    'error': 'error'
   };
-  return colors[type] || colors['info'];
+  return classes[type] || '';
 }
 
-function formatTime(timestamp) {
-  const date = new Date(timestamp);
+function formatTime(date) {
   const now = new Date();
   const diffMs = now - date;
   const diffMins = Math.floor(diffMs / 60000);
   const diffHours = Math.floor(diffMs / 3600000);
   const diffDays = Math.floor(diffMs / 86400000);
 
-  if (diffMins < 1) return 'Just now';
+  if (diffMins < 1) return 'just now';
   if (diffMins < 60) return `${diffMins}m ago`;
   if (diffHours < 24) return `${diffHours}h ago`;
   if (diffDays < 7) return `${diffDays}d ago`;
@@ -243,50 +260,59 @@ function formatTime(timestamp) {
 }
 
 // ========================================
+// GET USER ID FROM LOCALSTORAGE
+// ========================================
+
+function getCurrentUserId() {
+  // ✅ FIXED: Read from localStorage
+  const userId = localStorage.getItem('userId');
+  console.log(`👤 Current user ID: ${userId}`);
+  return userId;
+}
+
+// ========================================
 // EVENT HANDLERS (Global Scope)
 // ========================================
 
-window.handleMarkAsRead = async (notificationId) => {
+window.handleMarkAsRead = async (notificationId, event) => {
+  if (event) event.stopPropagation();
+  
   try {
     await markNotificationAsRead(notificationId);
     const notifEl = document.querySelector(`[data-id="${notificationId}"]`);
     if (notifEl) {
       notifEl.classList.remove('unread');
       notifEl.classList.add('read');
-      const unreadDot = notifEl.querySelector('.unread-dot');
-      if (unreadDot) unreadDot.remove();
-      const markReadBtn = notifEl.querySelector('.mark-read-btn');
-      if (markReadBtn) markReadBtn.remove();
-    }
-    
-    // Update badge
-    const userId = getCurrentUserId();
-    if (userId) {
-      const count = await getUnreadNotificationCount(userId);
-      updateNotificationBadge(count);
+      
+      // Reload panel to update
+      const userId = getCurrentUserId();
+      if (userId) {
+        const notifications = await fetchNotifications(userId);
+        renderNotificationsInPanel(notifications);
+        const count = notifications.filter(n => !n.read).length;
+        updateNotificationBadge(count);
+      }
     }
   } catch (error) {
     console.error('Error marking as read:', error);
   }
 };
 
-window.handleDeleteNotification = async (notificationId) => {
+window.handleDeleteNotification = async (notificationId, event) => {
+  if (event) event.stopPropagation();
+  
   try {
     await deleteNotification(notificationId);
     const notifEl = document.querySelector(`[data-id="${notificationId}"]`);
     if (notifEl) notifEl.remove();
     
-    // Update badge
+    // Reload panel
     const userId = getCurrentUserId();
     if (userId) {
-      const count = await getUnreadNotificationCount(userId);
+      const notifications = await fetchNotifications(userId);
+      renderNotificationsInPanel(notifications);
+      const count = notifications.filter(n => !n.read).length;
       updateNotificationBadge(count);
-    }
-    
-    // Check if container is empty
-    const container = document.getElementById('notifications-container');
-    if (container && container.children.length === 0) {
-      renderNotifications([]);
     }
   } catch (error) {
     console.error('Error deleting notification:', error);
@@ -300,16 +326,9 @@ window.handleMarkAllAsRead = async () => {
   try {
     await markAllNotificationsAsRead(userId);
     
-    // Update UI
-    document.querySelectorAll('.notification-item.unread').forEach(el => {
-      el.classList.remove('unread');
-      el.classList.add('read');
-      const unreadDot = el.querySelector('.unread-dot');
-      if (unreadDot) unreadDot.remove();
-      const markReadBtn = el.querySelector('.mark-read-btn');
-      if (markReadBtn) markReadBtn.remove();
-    });
-    
+    // Reload panel
+    const notifications = await fetchNotifications(userId);
+    renderNotificationsInPanel(notifications);
     updateNotificationBadge(0);
   } catch (error) {
     console.error('Error marking all as read:', error);
@@ -320,7 +339,9 @@ window.handleMarkAllAsRead = async () => {
 // AUTO-CHECK FOR NEW NOTIFICATIONS
 // ========================================
 
-function startNotificationPolling(userId, intervalMs = 10000) {
+function startNotificationPolling(userId, intervalMs = 15000) {
+  console.log(`⏰ Starting notification polling for user ${userId} every ${intervalMs}ms`);
+  
   // Stop any existing interval
   if (notificationCheckInterval) {
     clearInterval(notificationCheckInterval);
@@ -339,26 +360,24 @@ function stopNotificationPolling() {
   if (notificationCheckInterval) {
     clearInterval(notificationCheckInterval);
     notificationCheckInterval = null;
+    console.log('⏹️ Stopped notification polling');
   }
 }
 
 async function checkForNewNotifications(userId) {
   try {
-    const count = await getUnreadNotificationCount(userId);
-    updateNotificationBadge(count);
-    
-    // Show browser notification for new alerts
     const notifications = await fetchNotifications(userId);
-    const unreadNotifs = notifications.filter(n => !n.is_read);
+    const unreadCount = notifications.filter(n => !n.read).length;
     
-    if (unreadNotifs.length > 0 && lastCheckedTimestamp) {
-      const newNotifs = unreadNotifs.filter(n => 
-        new Date(n.created_at) > lastCheckedTimestamp
-      );
-      
-      newNotifs.forEach(notif => {
-        showBrowserNotification(notif.title, notif.message);
-      });
+    console.log(`🔍 Checked notifications: ${unreadCount} unread`);
+    
+    // Update badge
+    updateNotificationBadge(unreadCount);
+    
+    // Update panel if visible
+    const panel = document.getElementById('notification-panel');
+    if (panel && panel.style.display === 'block') {
+      renderNotificationsInPanel(notifications);
     }
     
     lastCheckedTimestamp = new Date();
@@ -368,59 +387,26 @@ async function checkForNewNotifications(userId) {
 }
 
 // ========================================
-// BROWSER NOTIFICATIONS
+// INITIALIZATION
 // ========================================
-
-function requestNotificationPermission() {
-  if ('Notification' in window && Notification.permission === 'default') {
-    Notification.requestPermission();
-  }
-}
-
-function showBrowserNotification(title, message) {
-  if ('Notification' in window && Notification.permission === 'granted') {
-    new Notification(title, {
-      body: message,
-      icon: '/icon.png',
-      badge: '/badge.png'
-    });
-  }
-}
-
-// ========================================
-// UTILITY FUNCTION
-// ========================================
-
-function getCurrentUserId() {
-  // Implement based on your auth system
-  // Example: return sessionStorage.getItem('userId');
-  return null; // Replace with actual implementation
-}
-
-// ========================================
-// USAGE EXAMPLE
-// ========================================
-
 
 document.addEventListener('DOMContentLoaded', () => {
   const userId = getCurrentUserId();
   
   if (userId) {
-    // Start polling for notifications every 10 seconds
-    startNotificationPolling(userId, 10000);
+    console.log(`✅ Initializing notifications for user ${userId}`);
     
-    // Request browser notification permission
-    requestNotificationPermission();
+    // Start polling for notifications every 15 seconds
+    startNotificationPolling(userId, 15000);
     
-    // Load and display notifications
+    // Load and display notifications in panel
     fetchNotifications(userId).then(notifications => {
-      renderNotifications(notifications);
+      renderNotificationsInPanel(notifications);
+      const unreadCount = notifications.filter(n => !n.read).length;
+      updateNotificationBadge(unreadCount);
     });
-    
-    // Update badge
-    getUnreadNotificationCount(userId).then(count => {
-      updateNotificationBadge(count);
-    });
+  } else {
+    console.warn('❌ No user ID found in localStorage');
   }
   
   // Clean up on page unload
