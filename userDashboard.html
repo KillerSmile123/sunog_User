@@ -669,6 +669,71 @@
                 }
             });
         });
+
+
+        // ========================================
+        // BURGER MENU FIX
+        // ========================================
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const burger = document.getElementById('burger');
+            const dropdown = document.getElementById('dropdown');
+            const notificationPanel = document.getElementById('notification-panel');
+            
+            console.log('🍔 Burger menu initializing...');
+            console.log('Burger element:', burger);
+            console.log('Dropdown element:', dropdown);
+            
+            if (!burger || !dropdown) {
+                console.error('❌ Burger or dropdown element not found!');
+                return;
+            }
+            
+            // Toggle dropdown on burger click
+            burger.addEventListener('click', (e) => {
+                e.stopPropagation();
+                console.log('🍔 Burger clicked!');
+                
+                // Toggle dropdown
+                if (dropdown.style.display === 'flex') {
+                    dropdown.style.display = 'none';
+                    console.log('Dropdown closed');
+                } else {
+                    dropdown.style.display = 'flex';
+                    console.log('Dropdown opened');
+                    
+                    // Close notification panel if open
+                    if (notificationPanel) {
+                        notificationPanel.style.display = 'none';
+                    }
+                }
+            });
+            
+            // Close dropdown when clicking outside
+            document.addEventListener('click', (e) => {
+                // Don't close if clicking burger or dropdown
+                if (burger.contains(e.target) || dropdown.contains(e.target)) {
+                    return;
+                }
+                
+                // Close dropdown
+                if (dropdown.style.display === 'flex') {
+                    dropdown.style.display = 'none';
+                    console.log('Dropdown closed (outside click)');
+                }
+            });
+            
+            // Close dropdown when clicking a link
+            const dropdownLinks = dropdown.querySelectorAll('a');
+            dropdownLinks.forEach(link => {
+                link.addEventListener('click', () => {
+                    dropdown.style.display = 'none';
+                    console.log('Dropdown closed (link clicked)');
+                });
+            });
+            
+            console.log('✅ Burger menu initialized successfully!');
+        });
     </script>
 
 </body>
