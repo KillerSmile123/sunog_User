@@ -145,7 +145,8 @@
             font-size: 11px;
             text-align: center;
             white-space: nowrap;
-            display: none;
+            display: flex;
+            color: white;
         }
 
         /* Report Button - Center */
@@ -162,21 +163,26 @@
             text-decoration: none;
             color: white;
             font-size: 14px;
+            background: linear-gradient(to right, #800000, #a30000);
+            border-radius: 50%;
+            box-shadow: 0 4px 12px rgba(128,0,0,0.4);
         }
 
         .report-btn:hover {
-            opacity: 0.8;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(128,0,0,0.5);
         }
 
         .report-icon {
             font-size: 32px;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
         }
 
         .report-label {
             font-size: 10px;
             text-align: center;
             white-space: nowrap;
+            color: white;
         }
 
 
@@ -488,6 +494,7 @@
         <!-- My Profile -->
         <a href="userProf.html" class="nav-item">
             <span class="nav-icon">👤</span>
+            <span class="nav-label">My Profile</span>
         </a>
 
         <!-- Report Button - Center -->
@@ -499,11 +506,13 @@
         <!-- Settings -->
         <a href="Setting.html" class="nav-item">
             <span class="nav-icon">⚙️</span>
+            <span class="nav-label">Settings</span>
         </a>
 
         <!-- View Report -->
         <a href="viewreport.html" class="nav-item">
             <span class="nav-icon">👀</span>
+            <span class="nav-label">Reports</span>
         </a>
     </div>
 
