@@ -1,61 +1,286 @@
-// notificationUser.js
-// Receive and display notifications for users
+// notificationUser.js - Real-time with Server-Sent Events (SSE)
 
-// Backend API Base URL
 const NOTIFICATION_API_BASE = 'https://backend-3-hqil.onrender.com';
 
 // ========================================
 // GLOBAL STATE
 // ========================================
 
-let notificationCheckInterval = null;
-let lastCheckedTimestamp = null;
+let eventSource = null;
+let reconnectAttempts = 0;
+const MAX_RECONNECT_ATTEMPTS = 5;
+let reconnectTimeout = null;
 
 // ========================================
-// FETCH NOTIFICATIONS (FIXED ENDPOINT)
+// SSE CONNECTION
+// ========================================
+
+function connectSSE(userId) {
+  if (eventSource) {
+    eventSource.close();
+  }
+
+  console.log(`🔌 Connecting to SSE for user ${userId}...`);
+  
+  // Connect to SSE endpoint
+  eventSource = new EventSource(`${NOTIFICATION_API_BASE}/sse/notifications/${userId}`);
+
+  eventSource.onopen = () => {
+    console.log('✅ SSE connected - notifications will arrive instantly!');
+    reconnectAttempts = 0;
+    
+    // Initial fetch
+    fetchNotifications(userId).then(notifications => {
+      renderNotificationsInPanel(notifications);
+      const unreadCount = notifications.filter(n => !n.read).length;
+      updateNotificationBadge(unreadCount);
+    });
+  };
+
+  eventSource.onmessage = (event) => {
+    console.log('📨 Real-time notification received:', event.data);
+    
+    try {
+      const data = JSON.parse(event.data);
+      
+      // Ignore heartbeat and connection messages
+      if (data.type === 'connected') {
+        console.log('🎉 Connected to notification stream');
+        return;
+      }
+      
+      handleNewNotification(data, userId);
+    } catch (error) {
+      console.error('Error parsing notification:', error);
+    }
+  };
+
+  eventSource.onerror = (error) => {
+    console.error('❌ SSE error:', error);
+    eventSource.close();
+    
+    // Attempt to reconnect with exponential backoff
+    if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+      reconnectAttempts++;
+      const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
+      console.log(`🔄 Reconnecting in ${delay/1000}s... (Attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})`);
+      
+      reconnectTimeout = setTimeout(() => {
+        connectSSE(userId);
+      }, delay);
+    } else {
+      console.error('❌ Max reconnection attempts reached');
+      showConnectionError();
+    }
+  };
+}
+
+function disconnectSSE() {
+  if (eventSource) {
+    eventSource.close();
+    eventSource = null;
+  }
+  if (reconnectTimeout) {
+    clearTimeout(reconnectTimeout);
+    reconnectTimeout = null;
+  }
+}
+
+function showConnectionError() {
+  const container = document.getElementById('notification-list');
+  if (container && container.children.length === 0) {
+    container.innerHTML = `
+      <div class="no-notifications">
+        <div class="no-notifications-icon">⚠️</div>
+        <p>Connection Lost</p>
+        <span>Please refresh the page to reconnect</span>
+      </div>
+    `;
+  }
+}
+
+// ========================================
+// HANDLE NEW NOTIFICATION (Real-time)
+// ========================================
+
+async function handleNewNotification(notification, userId) {
+  console.log('🔔 Processing new real-time notification:', notification);
+  
+  // Refresh notifications list
+  const notifications = await fetchNotifications(userId);
+  const unreadCount = notifications.filter(n => !n.read).length;
+  updateNotificationBadge(unreadCount);
+  
+  // Update panel if visible
+  const panel = document.getElementById('notification-panel');
+  if (panel && panel.style.display === 'block') {
+    renderNotificationsInPanel(notifications);
+  }
+  
+  // Show browser notification if permission granted
+  if (Notification.permission === 'granted') {
+    showBrowserNotification(notification);
+  }
+  
+  // Play notification sound
+  playNotificationSound();
+  
+  // Show toast notification
+  showToastNotification(notification);
+}
+
+// ========================================
+// BROWSER NOTIFICATIONS
+// ========================================
+
+function requestNotificationPermission() {
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission().then(permission => {
+      console.log('🔔 Notification permission:', permission);
+      if (permission === 'granted') {
+        console.log('✅ Browser notifications enabled!');
+      }
+    });
+  }
+}
+
+function showBrowserNotification(notification) {
+  const icon = getNotificationIcon(notification.type);
+  
+  const browserNotif = new Notification(notification.title, {
+    body: notification.message,
+    tag: notification.id,
+    requireInteraction: false,
+    silent: false
+  });
+
+  browserNotif.onclick = () => {
+    window.focus();
+    const panel = document.getElementById('notification-panel');
+    if (panel) {
+      panel.style.display = 'block';
+    }
+    browserNotif.close();
+  };
+}
+
+// ========================================
+// TOAST NOTIFICATION (In-app popup)
+// ========================================
+
+function showToastNotification(notification) {
+  // Create toast element
+  const toast = document.createElement('div');
+  toast.className = 'notification-toast';
+  toast.innerHTML = `
+    <div class="toast-icon">${getNotificationIcon(notification.type)}</div>
+    <div class="toast-content">
+      <strong>${notification.title}</strong>
+      <p>${notification.message}</p>
+    </div>
+    <button class="toast-close" onclick="this.parentElement.remove()">×</button>
+  `;
+  
+  // Add styles if not already present
+  if (!document.getElementById('toast-styles')) {
+    const style = document.createElement('style');
+    style.id = 'toast-styles';
+    style.textContent = `
+      .notification-toast {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: white;
+        padding: 16px;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        max-width: 400px;
+        z-index: 10000;
+        animation: slideIn 0.3s ease-out;
+      }
+      @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+      }
+      .toast-icon {
+        font-size: 32px;
+        flex-shrink: 0;
+      }
+      .toast-content {
+        flex: 1;
+      }
+      .toast-content strong {
+        display: block;
+        margin-bottom: 4px;
+        color: #333;
+      }
+      .toast-content p {
+        margin: 0;
+        font-size: 14px;
+        color: #666;
+      }
+      .toast-close {
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        color: #999;
+        padding: 0;
+        width: 24px;
+        height: 24px;
+        flex-shrink: 0;
+      }
+      .toast-close:hover {
+        color: #333;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+  
+  document.body.appendChild(toast);
+  
+  // Auto-remove after 5 seconds
+  setTimeout(() => {
+    toast.style.animation = 'slideIn 0.3s ease-out reverse';
+    setTimeout(() => toast.remove(), 300);
+  }, 5000);
+}
+
+// ========================================
+// NOTIFICATION SOUND
+// ========================================
+
+function playNotificationSound() {
+  const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBjGH0fPTgjMGHm7A7+OZRQ0PV6vn77BdGAg+ltryxnMpBSl+zPLaizsIGGS57OihUBELTKXh8bllHAU2jdXzyn0vBSR4yPDajj0JE1+16+yrWxgIO5jc88p1LAUogMrz2Ys8CB1uxe/mnEsOElat6O+zYhoGPJPY88p3LgUjd8jw2o09CRRftOvrrVsYCDyX2/PKdSwFKH/J89iLPAgdbb/v5ptKDhJWrej');
+  audio.volume = 0.3;
+  audio.play().catch(e => console.log('Could not play sound:', e));
+}
+
+// ========================================
+// API FUNCTIONS
 // ========================================
 
 async function fetchNotifications(userId) {
   try {
-    // ✅ FIXED: Use correct endpoint /get_user_notifications/<user_id>
     const response = await fetch(`${NOTIFICATION_API_BASE}/get_user_notifications/${userId}`, {
       method: 'GET',
       credentials: 'include'
     });
-
+    
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-
+    
     const data = await response.json();
-    console.log('📬 Fetched notifications:', data.notifications);
     return data.notifications || [];
   } catch (error) {
     console.error('Error fetching notifications:', error);
     return [];
   }
 }
-
-// ========================================
-// GET UNREAD COUNT
-// ========================================
-
-async function getUnreadNotificationCount(userId) {
-  try {
-    // ✅ Count unread notifications from the fetched data
-    const notifications = await fetchNotifications(userId);
-    const unreadCount = notifications.filter(n => !n.read).length;
-    console.log(`📊 Unread count: ${unreadCount}`);
-    return unreadCount;
-  } catch (error) {
-    console.error('Error getting unread count:', error);
-    return 0;
-  }
-}
-
-// ========================================
-// MARK AS READ
-// ========================================
 
 async function markNotificationAsRead(notificationId) {
   try {
@@ -64,22 +289,17 @@ async function markNotificationAsRead(notificationId) {
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' }
     });
-
+    
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-
-    console.log(`✅ Notification ${notificationId} marked as read`);
+    
     return await response.json();
   } catch (error) {
     console.error('Error marking notification as read:', error);
     throw error;
   }
 }
-
-// ========================================
-// MARK ALL AS READ
-// ========================================
 
 async function markAllNotificationsAsRead(userId) {
   try {
@@ -89,12 +309,11 @@ async function markAllNotificationsAsRead(userId) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ user_id: userId })
     });
-
+    
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-
-    console.log(`✅ All notifications marked as read`);
+    
     return await response.json();
   } catch (error) {
     console.error('Error marking all as read:', error);
@@ -102,22 +321,17 @@ async function markAllNotificationsAsRead(userId) {
   }
 }
 
-// ========================================
-// DELETE NOTIFICATION
-// ========================================
-
 async function deleteNotification(notificationId) {
   try {
     const response = await fetch(`${NOTIFICATION_API_BASE}/api/notifications/${notificationId}`, {
       method: 'DELETE',
       credentials: 'include'
     });
-
+    
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-
-    console.log(`🗑️ Notification ${notificationId} deleted`);
+    
     return await response.json();
   } catch (error) {
     console.error('Error deleting notification:', error);
@@ -126,11 +340,10 @@ async function deleteNotification(notificationId) {
 }
 
 // ========================================
-// UPDATE BADGE
+// UI FUNCTIONS
 // ========================================
 
 function updateNotificationBadge(count) {
-  // ✅ FIXED: Use correct selector from userDashboard.html
   const badgeEl = document.getElementById('notification-badge');
   if (badgeEl) {
     if (count > 0) {
@@ -139,23 +352,12 @@ function updateNotificationBadge(count) {
     } else {
       badgeEl.classList.remove('active');
     }
-    console.log(`🔔 Badge updated: ${count}`);
   }
 }
 
-// ========================================
-// RENDER NOTIFICATIONS IN PANEL
-// ========================================
-
 function renderNotificationsInPanel(notifications) {
-  // ✅ FIXED: Use correct container ID from userDashboard.html
   const container = document.getElementById('notification-list');
-  if (!container) {
-    console.warn('notification-list container not found');
-    return;
-  }
-
-  console.log(`📋 Rendering ${notifications.length} notifications`);
+  if (!container) return;
 
   if (notifications.length === 0) {
     container.innerHTML = `
@@ -169,23 +371,16 @@ function renderNotificationsInPanel(notifications) {
   }
 
   container.innerHTML = '';
-  
-  // Sort by timestamp, newest first
-  const sorted = notifications.sort((a, b) => 
-    new Date(b.timestamp) - new Date(a.timestamp)
-  );
+  const sorted = notifications.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
   sorted.forEach(notif => {
     const notifEl = document.createElement('div');
-    // ✅ FIXED: Use correct class names from userDashboard.html CSS
     notifEl.className = `notification-item ${!notif.read ? 'unread' : ''}`;
     notifEl.dataset.id = notif.id;
     
     const typeIcon = getNotificationIcon(notif.type);
     const typeClass = getNotificationTypeClass(notif.type);
-    
-    const timestamp = new Date(notif.timestamp);
-    const timeAgo = formatTime(timestamp);
+    const timeAgo = formatTime(new Date(notif.timestamp));
     
     notifEl.innerHTML = `
       <div class="notification-icon ${typeClass}">${typeIcon}</div>
@@ -202,7 +397,6 @@ function renderNotificationsInPanel(notifications) {
       </div>
     `;
     
-    // Click to mark as read
     if (!notif.read) {
       notifEl.addEventListener('click', (e) => {
         if (!e.target.closest('.notification-actions')) {
@@ -214,10 +408,6 @@ function renderNotificationsInPanel(notifications) {
     container.appendChild(notifEl);
   });
 }
-
-// ========================================
-// HELPER FUNCTIONS
-// ========================================
 
 function getNotificationIcon(type) {
   const icons = {
@@ -259,19 +449,12 @@ function formatTime(date) {
   return date.toLocaleDateString();
 }
 
-// ========================================
-// GET USER ID FROM LOCALSTORAGE
-// ========================================
-
 function getCurrentUserId() {
-  // ✅ FIXED: Read from localStorage
-  const userId = localStorage.getItem('userId');
-  console.log(`👤 Current user ID: ${userId}`);
-  return userId;
+  return localStorage.getItem('userId');
 }
 
 // ========================================
-// EVENT HANDLERS (Global Scope)
+// EVENT HANDLERS
 // ========================================
 
 window.handleMarkAsRead = async (notificationId, event) => {
@@ -279,19 +462,11 @@ window.handleMarkAsRead = async (notificationId, event) => {
   
   try {
     await markNotificationAsRead(notificationId);
-    const notifEl = document.querySelector(`[data-id="${notificationId}"]`);
-    if (notifEl) {
-      notifEl.classList.remove('unread');
-      notifEl.classList.add('read');
-      
-      // Reload panel to update
-      const userId = getCurrentUserId();
-      if (userId) {
-        const notifications = await fetchNotifications(userId);
-        renderNotificationsInPanel(notifications);
-        const count = notifications.filter(n => !n.read).length;
-        updateNotificationBadge(count);
-      }
+    const userId = getCurrentUserId();
+    if (userId) {
+      const notifications = await fetchNotifications(userId);
+      renderNotificationsInPanel(notifications);
+      updateNotificationBadge(notifications.filter(n => !n.read).length);
     }
   } catch (error) {
     console.error('Error marking as read:', error);
@@ -303,16 +478,11 @@ window.handleDeleteNotification = async (notificationId, event) => {
   
   try {
     await deleteNotification(notificationId);
-    const notifEl = document.querySelector(`[data-id="${notificationId}"]`);
-    if (notifEl) notifEl.remove();
-    
-    // Reload panel
     const userId = getCurrentUserId();
     if (userId) {
       const notifications = await fetchNotifications(userId);
       renderNotificationsInPanel(notifications);
-      const count = notifications.filter(n => !n.read).length;
-      updateNotificationBadge(count);
+      updateNotificationBadge(notifications.filter(n => !n.read).length);
     }
   } catch (error) {
     console.error('Error deleting notification:', error);
@@ -325,8 +495,6 @@ window.handleMarkAllAsRead = async () => {
   
   try {
     await markAllNotificationsAsRead(userId);
-    
-    // Reload panel
     const notifications = await fetchNotifications(userId);
     renderNotificationsInPanel(notifications);
     updateNotificationBadge(0);
@@ -336,57 +504,6 @@ window.handleMarkAllAsRead = async () => {
 };
 
 // ========================================
-// AUTO-CHECK FOR NEW NOTIFICATIONS
-// ========================================
-
-function startNotificationPolling(userId, intervalMs = 15000) {
-  console.log(`⏰ Starting notification polling for user ${userId} every ${intervalMs}ms`);
-  
-  // Stop any existing interval
-  if (notificationCheckInterval) {
-    clearInterval(notificationCheckInterval);
-  }
-
-  // Check immediately
-  checkForNewNotifications(userId);
-
-  // Then check periodically
-  notificationCheckInterval = setInterval(() => {
-    checkForNewNotifications(userId);
-  }, intervalMs);
-}
-
-function stopNotificationPolling() {
-  if (notificationCheckInterval) {
-    clearInterval(notificationCheckInterval);
-    notificationCheckInterval = null;
-    console.log('⏹️ Stopped notification polling');
-  }
-}
-
-async function checkForNewNotifications(userId) {
-  try {
-    const notifications = await fetchNotifications(userId);
-    const unreadCount = notifications.filter(n => !n.read).length;
-    
-    console.log(`🔍 Checked notifications: ${unreadCount} unread`);
-    
-    // Update badge
-    updateNotificationBadge(unreadCount);
-    
-    // Update panel if visible
-    const panel = document.getElementById('notification-panel');
-    if (panel && panel.style.display === 'block') {
-      renderNotificationsInPanel(notifications);
-    }
-    
-    lastCheckedTimestamp = new Date();
-  } catch (error) {
-    console.error('Error checking notifications:', error);
-  }
-}
-
-// ========================================
 // INITIALIZATION
 // ========================================
 
@@ -394,23 +511,21 @@ document.addEventListener('DOMContentLoaded', () => {
   const userId = getCurrentUserId();
   
   if (userId) {
-    console.log(`✅ Initializing notifications for user ${userId}`);
+    console.log(`✅ Initializing REAL-TIME notifications (SSE) for user ${userId}`);
     
-    // Start polling for notifications every 15 seconds
-    startNotificationPolling(userId, 15000);
+    // Request browser notification permission
+    requestNotificationPermission();
     
-    // Load and display notifications in panel
-    fetchNotifications(userId).then(notifications => {
-      renderNotificationsInPanel(notifications);
-      const unreadCount = notifications.filter(n => !n.read).length;
-      updateNotificationBadge(unreadCount);
-    });
+    // Connect to SSE for instant notifications
+    connectSSE(userId);
+    
+    console.log('🎉 Real-time notifications active! You will receive instant updates.');
   } else {
     console.warn('❌ No user ID found in localStorage');
   }
   
   // Clean up on page unload
   window.addEventListener('beforeunload', () => {
-    stopNotificationPolling();
+    disconnectSSE();
   });
 });
