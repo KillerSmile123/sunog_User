@@ -3,23 +3,26 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>FireTrackr - Splash Page</title>
+  <title>BFP Splash Page</title>
   <link rel="stylesheet" href="css/index.css" />
   <script>
-    // Redirect to register.html immediately
-    window.location.href = "register.html";
+    setTimeout(() => {
+      window.location.href = "register.html";
+    }, 2000);
   </script>
 </head>
 <body>
-  
-  <div class="splash-container">
-    <div class="overlay"></div>
+  <div class="mobile-frame">
+    <div class="splash-container">
+      <div class="overlay"></div>
     <div class="content">
-      <img src="images/FireTackrlogo.png" alt="FireTrackr Logo" class="logo" />
-      <h1>FireTrackr</h1>
-      <p>Fire Monitoring System</p>
+        <img src="images/logo.png" alt="BFP Logo" class="logo" />
+        <div class="title">
+            <h1>Bureau of Fire Protection</h1>
+            <h2>Oroquieta City</h2>
+        </div>
+    </div>
     </div>
   </div>
-
 </body>
 </html>
