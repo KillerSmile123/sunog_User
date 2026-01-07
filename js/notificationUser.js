@@ -10,69 +10,88 @@ let eventSource = null;
 let reconnectAttempts = 0;
 const MAX_RECONNECT_ATTEMPTS = 5;
 let reconnectTimeout = null;
+let isSSESupported = true;
 
 // ========================================
 // SSE CONNECTION
 // ========================================
 
 function connectSSE(userId) {
+  // Close existing connection
   if (eventSource) {
     eventSource.close();
+    eventSource = null;
   }
 
   console.log(`🔌 Connecting to SSE for user ${userId}...`);
   
-  // Connect to SSE endpoint
-  eventSource = new EventSource(`${NOTIFICATION_API_BASE}/sse/notifications/${userId}`);
-
-  eventSource.onopen = () => {
-    console.log('✅ SSE connected - notifications will arrive instantly!');
-    reconnectAttempts = 0;
-    
-    // Initial fetch
-    fetchNotifications(userId).then(notifications => {
-      renderNotificationsInPanel(notifications);
-      const unreadCount = notifications.filter(n => !n.read).length;
-      updateNotificationBadge(unreadCount);
+  try {
+    // Connect to SSE endpoint
+    eventSource = new EventSource(`${NOTIFICATION_API_BASE}/sse/notifications/${userId}`, {
+      withCredentials: true
     });
-  };
 
-  eventSource.onmessage = (event) => {
-    console.log('📨 Real-time notification received:', event.data);
-    
-    try {
-      const data = JSON.parse(event.data);
+    eventSource.onopen = () => {
+      console.log('✅ SSE connected - notifications will arrive instantly!');
+      reconnectAttempts = 0;
       
-      // Ignore heartbeat and connection messages
-      if (data.type === 'connected') {
-        console.log('🎉 Connected to notification stream');
-        return;
+      // Initial fetch
+      fetchNotifications(userId).then(notifications => {
+        renderNotificationsInPanel(notifications);
+        const unreadCount = notifications.filter(n => !n.read).length;
+        updateNotificationBadge(unreadCount);
+      });
+    };
+
+    eventSource.onmessage = (event) => {
+      console.log('📨 Real-time notification received:', event.data);
+      
+      try {
+        const data = JSON.parse(event.data);
+        
+        // Ignore heartbeat and connection messages
+        if (data.type === 'connected') {
+          console.log('🎉 Connected to notification stream');
+          return;
+        }
+        
+        handleNewNotification(data, userId);
+      } catch (error) {
+        console.error('Error parsing notification:', error);
       }
-      
-      handleNewNotification(data, userId);
-    } catch (error) {
-      console.error('Error parsing notification:', error);
-    }
-  };
+    };
 
-  eventSource.onerror = (error) => {
-    console.error('❌ SSE error:', error);
-    eventSource.close();
-    
-    // Attempt to reconnect with exponential backoff
-    if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
-      reconnectAttempts++;
-      const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
-      console.log(`🔄 Reconnecting in ${delay/1000}s... (Attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})`);
+    eventSource.onerror = (error) => {
+      console.error('❌ SSE error:', error);
+      console.log('EventSource readyState:', eventSource?.readyState);
       
-      reconnectTimeout = setTimeout(() => {
-        connectSSE(userId);
-      }, delay);
-    } else {
-      console.error('❌ Max reconnection attempts reached');
-      showConnectionError();
-    }
-  };
+      // ReadyState: 0 = CONNECTING, 1 = OPEN, 2 = CLOSED
+      if (eventSource?.readyState === 2) {
+        console.log('Connection closed, attempting to reconnect...');
+        eventSource.close();
+        
+        // Attempt to reconnect with exponential backoff
+        if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+          reconnectAttempts++;
+          const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
+          console.log(`🔄 Reconnecting in ${delay/1000}s... (Attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})`);
+          
+          reconnectTimeout = setTimeout(() => {
+            connectSSE(userId);
+          }, delay);
+        } else {
+          console.error('❌ Max reconnection attempts reached - falling back to polling');
+          isSSESupported = false;
+          fallbackToPolling(userId);
+        }
+      }
+    };
+    
+  } catch (error) {
+    console.error('❌ Failed to create SSE connection:', error);
+    isSSESupported = false;
+    fallbackToPolling(userId);
+  }
 }
 
 function disconnectSSE() {
@@ -86,6 +105,45 @@ function disconnectSSE() {
   }
 }
 
+// ========================================
+// FALLBACK POLLING (if SSE fails)
+// ========================================
+
+let pollingInterval = null;
+
+function fallbackToPolling(userId) {
+  console.log('📡 Falling back to polling mode...');
+  
+  // Clear any existing polling
+  if (pollingInterval) {
+    clearInterval(pollingInterval);
+  }
+  
+  // Initial fetch
+  fetchNotifications(userId).then(notifications => {
+    renderNotificationsInPanel(notifications);
+    const unreadCount = notifications.filter(n => !n.read).length;
+    updateNotificationBadge(unreadCount);
+  });
+  
+  // Poll every 5 seconds
+  pollingInterval = setInterval(async () => {
+    try {
+      const notifications = await fetchNotifications(userId);
+      const unreadCount = notifications.filter(n => !n.read).length;
+      updateNotificationBadge(unreadCount);
+      
+      // Update panel if visible
+      const panel = document.getElementById('notification-panel');
+      if (panel && panel.style.display === 'block') {
+        renderNotificationsInPanel(notifications);
+      }
+    } catch (error) {
+      console.error('Polling error:', error);
+    }
+  }, 5000);
+}
+
 function showConnectionError() {
   const container = document.getElementById('notification-list');
   if (container && container.children.length === 0) {
@@ -93,7 +151,7 @@ function showConnectionError() {
       <div class="no-notifications">
         <div class="no-notifications-icon">⚠️</div>
         <p>Connection Lost</p>
-        <span>Please refresh the page to reconnect</span>
+        <span>Using backup notification system</span>
       </div>
     `;
   }
@@ -145,23 +203,27 @@ function requestNotificationPermission() {
 }
 
 function showBrowserNotification(notification) {
-  const icon = getNotificationIcon(notification.type);
-  
-  const browserNotif = new Notification(notification.title, {
-    body: notification.message,
-    tag: notification.id,
-    requireInteraction: false,
-    silent: false
-  });
+  try {
+    const icon = getNotificationIcon(notification.type);
+    
+    const browserNotif = new Notification(notification.title, {
+      body: notification.message,
+      tag: notification.id,
+      requireInteraction: false,
+      silent: false
+    });
 
-  browserNotif.onclick = () => {
-    window.focus();
-    const panel = document.getElementById('notification-panel');
-    if (panel) {
-      panel.style.display = 'block';
-    }
-    browserNotif.close();
-  };
+    browserNotif.onclick = () => {
+      window.focus();
+      const panel = document.getElementById('notification-panel');
+      if (panel) {
+        panel.style.display = 'block';
+      }
+      browserNotif.close();
+    };
+  } catch (error) {
+    console.error('Browser notification error:', error);
+  }
 }
 
 // ========================================
@@ -254,9 +316,13 @@ function showToastNotification(notification) {
 // ========================================
 
 function playNotificationSound() {
-  const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBjGH0fPTgjMGHm7A7+OZRQ0PV6vn77BdGAg+ltryxnMpBSl+zPLaizsIGGS57OihUBELTKXh8bllHAU2jdXzyn0vBSR4yPDajj0JE1+16+yrWxgIO5jc88p1LAUogMrz2Ys8CB1uxe/mnEsOElat6O+zYhoGPJPY88p3LgUjd8jw2o09CRRftOvrrVsYCDyX2/PKdSwFKH/J89iLPAgdbb/v5ptKDhJWrej');
-  audio.volume = 0.3;
-  audio.play().catch(e => console.log('Could not play sound:', e));
+  try {
+    const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBjGH0fPTgjMGHm7A7+OZRQ0PV6vn77BdGAg+ltryxnMpBSl+zPLaizsIGGS57OihUBELTKXh8bllHAU2jdXzyn0vBSR4yPDajj0JE1+16+yrWxgIO5jc88p1LAUogMrz2Ys8CB1uxe/mnEsOElat6O+zYhoGPJPY88p3LgUjd8jw2o09CRRftOvrrVsYCDyX2/PKdSwFKH/J89iLPAgdbb/v5ptKDhJWrej');
+    audio.volume = 0.3;
+    audio.play().catch(e => console.log('Could not play sound:', e));
+  } catch (error) {
+    console.error('Sound play error:', error);
+  }
 }
 
 // ========================================
@@ -267,7 +333,10 @@ async function fetchNotifications(userId) {
   try {
     const response = await fetch(`${NOTIFICATION_API_BASE}/get_user_notifications/${userId}`, {
       method: 'GET',
-      credentials: 'include'
+      credentials: 'include',
+      headers: {
+        'Accept': 'application/json'
+      }
     });
     
     if (!response.ok) {
@@ -287,7 +356,10 @@ async function markNotificationAsRead(notificationId) {
     const response = await fetch(`${NOTIFICATION_API_BASE}/mark_notification_read/${notificationId}`, {
       method: 'POST',
       credentials: 'include',
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      }
     });
     
     if (!response.ok) {
@@ -306,7 +378,10 @@ async function markAllNotificationsAsRead(userId) {
     const response = await fetch(`${NOTIFICATION_API_BASE}/notifications/mark-all-read`, {
       method: 'POST',
       credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
       body: JSON.stringify({ user_id: userId })
     });
     
@@ -325,7 +400,10 @@ async function deleteNotification(notificationId) {
   try {
     const response = await fetch(`${NOTIFICATION_API_BASE}/api/notifications/${notificationId}`, {
       method: 'DELETE',
-      credentials: 'include'
+      credentials: 'include',
+      headers: {
+        'Accept': 'application/json'
+      }
     });
     
     if (!response.ok) {
@@ -511,15 +589,21 @@ document.addEventListener('DOMContentLoaded', () => {
   const userId = getCurrentUserId();
   
   if (userId) {
-    console.log(`✅ Initializing REAL-TIME notifications (SSE) for user ${userId}`);
+    console.log(`✅ Initializing notifications for user ${userId}`);
     
     // Request browser notification permission
     requestNotificationPermission();
     
-    // Connect to SSE for instant notifications
-    connectSSE(userId);
+    // Try SSE first, fallback to polling if it fails
+    if (isSSESupported) {
+      console.log('📡 Attempting SSE connection...');
+      connectSSE(userId);
+    } else {
+      console.log('📡 SSE not supported, using polling...');
+      fallbackToPolling(userId);
+    }
     
-    console.log('🎉 Real-time notifications active! You will receive instant updates.');
+    console.log('🎉 Notification system initialized!');
   } else {
     console.warn('❌ No user ID found in localStorage');
   }
@@ -527,5 +611,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // Clean up on page unload
   window.addEventListener('beforeunload', () => {
     disconnectSSE();
+    if (pollingInterval) {
+      clearInterval(pollingInterval);
+    }
   });
 });

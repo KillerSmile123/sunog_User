@@ -7,20 +7,20 @@ const API_URL = 'https://backend-3-hqil.onrender.com';
 // USER AUTHENTICATION & REGISTRATION SCRIPT
 // ==============================
 
-// Save token
+// Save token (using sessionStorage for security)
 function saveToken(token) {
-  localStorage.setItem("user_token", token);
+  sessionStorage.setItem("user_token", token);
 }
 
 // Get token
 function getToken() {
-  return localStorage.getItem("user_token");
+  return sessionStorage.getItem("user_token");
 }
 
 // Remove token & user info (logout)
 function removeToken() {
-  localStorage.removeItem("user_token");
-  localStorage.removeItem("user_info");
+  sessionStorage.removeItem("user_token");
+  sessionStorage.removeItem("user_info");
 }
 
 // Check if logged in
@@ -30,16 +30,14 @@ function isLoggedIn() {
 
 // Check if user has registered
 function isRegistered() {
-  return localStorage.getItem("user_info") !== null;
+  return sessionStorage.getItem("user_info") !== null;
 }
 
 // Protect pages
 function protectPage() {
   if (!isRegistered()) {
-    // Not registered → redirect to register.html
     window.location.replace("register.html");
   } else if (!isLoggedIn()) {
-    // Registered but not logged in → redirect to login.html
     window.location.replace("login.html");
   }
 }
@@ -60,32 +58,49 @@ function loadUserInfo(user) {
 }
 
 // ==============================
-// LOGIN FUNCTION
+// SEND OTP FUNCTION
 // ==============================
-async function loginUser(event) {
-  event.preventDefault();
-  const gmail = document.getElementById("gmail").value;
-  const mobile = document.getElementById("mobile").value;
-
+async function sendOTP(gmail) {
   try {
-    const response = await fetch(`${API_URL}/user/login`, {
+    const response = await fetch(`${API_URL}/user/send-otp`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      credentials: 'include', // Important for cookies/sessions
-      body: JSON.stringify({ gmail, mobile })
+      credentials: 'include',
+      body: JSON.stringify({ gmail })
     });
 
     const data = await response.json();
+    return { success: response.ok, data };
+  } catch (err) {
+    console.error(err);
+    return { success: false, error: "Network error" };
+  }
+}
+
+// ==============================
+// VERIFY OTP & LOGIN FUNCTION
+// ==============================
+async function verifyOTPAndLogin(gmail, otp) {
+  try {
+    const response = await fetch(`${API_URL}/user/verify-otp`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: 'include',
+      body: JSON.stringify({ gmail, otp })
+    });
+
+    const data = await response.json();
+    
     if (response.ok && data.token) {
       saveToken(data.token);
-      localStorage.setItem("user_info", JSON.stringify(data.user));
-      window.location.href = "userDashboard.html";
+      sessionStorage.setItem("user_info", JSON.stringify(data.user));
+      return { success: true, data };
     } else {
-      alert(data.message || "Login failed!");
+      return { success: false, message: data.message || "Invalid OTP" };
     }
   } catch (err) {
     console.error(err);
-    alert("Something went wrong. Try again!");
+    return { success: false, error: "Network error" };
   }
 }
 
@@ -106,8 +121,7 @@ async function registerUser(event) {
   }
 
   try {
-    // Send to backend
-    const response = await fetch(`${API_URL}/user/register`, {
+    const response = await fetch(`${API_URL}/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: 'include',
@@ -117,9 +131,8 @@ async function registerUser(event) {
     const data = await response.json();
     
     if (response.ok) {
-      // Save user info locally
       const user = { fullname, address, gmail, mobile };
-      localStorage.setItem("user_info", JSON.stringify(user));
+      sessionStorage.setItem("user_info", JSON.stringify(user));
       
       alert("Registration successful! Please login.");
       window.location.href = "login.html";
@@ -144,7 +157,7 @@ function logoutUser() {
 // GET STORED USER
 // ==============================
 function getStoredUser() {
-  const userStr = localStorage.getItem("user_info");
+  const userStr = sessionStorage.getItem("user_info");
   return userStr ? JSON.parse(userStr) : null;
 }
 
@@ -169,11 +182,5 @@ document.addEventListener("DOMContentLoaded", () => {
   const registerForm = document.getElementById("registerForm");
   if (registerForm) {
     registerForm.addEventListener("submit", registerUser);
-  }
-
-  // Attach login form if exists
-  const loginForm = document.getElementById("loginForm");
-  if (loginForm) {
-    loginForm.addEventListener("submit", loginUser);
   }
 });
