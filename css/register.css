@@ -26,21 +26,7 @@ body, html {
   background-color: #ffffff;
 }
 
-/* --- Splash Screen --- */
-.splash-container {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: url('../images/monoblk.jpg') no-repeat center center/cover;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  z-index: 2;
-  transition: opacity 0.8s ease;
-}
+
 
 .overlay {
   position: absolute;
