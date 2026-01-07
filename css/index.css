@@ -1,6 +1,19 @@
+/* --- General Reset --- */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body, html {
+  width: 100%;
+  height: 100%;
+  font-family: 'Segoe UI', 'Roboto', 'Arial', sans-serif;
+}
+
 /* --- Splash Screen --- */
 .splash-container {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
   width: 100%;
@@ -11,19 +24,6 @@
   justify-content: center;
   align-items: center;
   z-index: 2;
-  transition: opacity 0.8s ease;
-}
-
-/* --- Mobile Frame --- */
-.mobile-frame {
-  width: 320px;
-  max-width: 90vw;
-  height: 600px;
-  border-radius: 35px;
-  overflow: hidden;
-  position: relative;
-  box-shadow: 0 0 20px rgba(0,0,0,0.5);
-  background-color: #ffffff;
 }
 
 .overlay {
@@ -37,9 +37,45 @@
   z-index: 1;
 }
 
-.splash-content {
+.content {
   position: relative;
   z-index: 2;
   text-align: center;
   padding: 0 20px;
+}
+
+.content .logo {
+  width: 120px;
+  height: auto;
+  margin-bottom: 20px;
+}
+
+.content h1 {
+  font-size: 36px;
+  font-weight: 700;
+  color: #ffffff;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  margin-bottom: 10px;
+  letter-spacing: 1px;
+}
+
+.content p {
+  font-size: 18px;
+  color: #e0e0e0;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+/* --- Responsive --- */
+@media (max-width: 600px) {
+  .content .logo {
+    width: 100px;
+  }
+
+  .content h1 {
+    font-size: 28px;
+  }
+
+  .content p {
+    font-size: 16px;
+  }
 }
