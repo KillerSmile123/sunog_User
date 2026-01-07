@@ -20,31 +20,29 @@
 
         #map {
             width: 100%;
-            height: calc(100% - 60px);
-            margin-top: 60px;
+            height: calc(100% - 70px);
             background: #f0f0f0;
         }
 
         /* Top Bar */
         .top-bar {
-            position: absolute;
-            top: 0;
+            position: fixed;
+            bottom: 0;
             left: 0;
             right: 0;
-            height: 60px;
-            background-color: #800000;
+            height: 70px;
+            background-color: #000;
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            padding: 0 15px;
+            justify-content: space-around;
+            padding: 0;
             z-index: 600;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            box-shadow: 0 -2px 8px rgba(0,0,0,0.2);
         }
 
+
         .logo-section {
-            display: flex;
-            align-items: center;
-            gap: 10px;
+            display: none;
         }
 
         .logo-text {
@@ -66,26 +64,98 @@
 
         .top-bar-controls {
             display: flex;
-            gap: 10px;
+            gap: 0;
             align-items: center;
+            width: 100%;
+            justify-content: space-around;
         }
 
-        /* Notification Bell - Facebook Style */
+        /* Bottom Nav Item */
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 70px;
+            height: 70px;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s;
+            text-decoration: none;
+            color: white;
+            font-size: 14px;
+        }
+
+        .nav-item:hover {
+            opacity: 0.8;
+        }
+
+        .nav-item.active {
+            opacity: 1;
+        }
+
+        .nav-icon {
+            font-size: 26px;
+            margin-bottom: 4px;
+        }
+
+        .nav-label {
+            font-size: 11px;
+            text-align: center;
+            white-space: nowrap;
+            display: none;
+        }
+
+        /* Report Button - Center */
+        .report-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 70px;
+            height: 70px;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s;
+            text-decoration: none;
+            color: white;
+            font-size: 14px;
+        }
+
+        .report-btn:hover {
+            opacity: 0.8;
+        }
+
+        .report-icon {
+            font-size: 32px;
+            margin-bottom: 4px;
+        }
+
+        .report-label {
+            font-size: 10px;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+
+
+
+        /* Notification Bell - Bottom Nav Style */
         .notification-bell {
             position: relative;
             cursor: pointer;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
+            width: 70px;
+            height: 70px;
             transition: all 0.2s;
-            background-color: rgba(255,255,255,0.1);
+            background-color: transparent;
         }
 
         .notification-bell:hover {
-            background-color: rgba(255,255,255,0.2);
+            opacity: 0.8;
         }
 
         .notification-bell:active {
@@ -93,14 +163,15 @@
         }
 
         .notification-bell .bell-icon {
-            font-size: 22px;
+            font-size: 26px;
             position: relative;
+            margin-bottom: 4px;
         }
 
         .notification-bell .badge {
             position: absolute;
-            top: -5px;
-            right: -5px;
+            top: 8px;
+            right: 18px;
             background-color: #ff3b30;
             color: white;
             border-radius: 10px;
@@ -112,68 +183,39 @@
             align-items: center;
             justify-content: center;
             padding: 0 5px;
-            border: 2px solid #800000;
+            border: 2px solid #000;
         }
 
         .notification-bell .badge.active {
             display: flex;
         }
 
-        /* Burger Menu */
+        .notification-bell .label {
+            font-size: 11px;
+            color: white;
+        }
+
+        /* Burger Menu - Hidden */
         .burger {
-            width: 25px;
-            height: 20px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            cursor: pointer;
-            position: relative;
-            z-index: 701;
-        }
-
-        .burger div {
-            height: 3px;
-            background-color: white;
-            border-radius: 2px;
-            transition: all 0.3s;
-        }
-
-        /* Dropdown */
-        .dropdown {
-            position: absolute;
-            top: 60px;
-            right: 15px;
-            background-color: #800000;
-            border-radius: 8px;
             display: none;
-            flex-direction: column;
-            width: 150px;
-            overflow: hidden;
-            z-index: 700;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        }
+
+
+        /* Dropdown - Hidden */
+        .dropdown {
+            display: none;
         }
 
         .dropdown.active {
-            display: flex;
+            display: none;
         }
 
-        .dropdown a {
-            padding: 12px;
-            font-size: 14px;
-            color: white;
-            text-decoration: none;
-            transition: background-color 0.2s;
-        }
-
-        .dropdown a:hover {
-            background-color: #a30000;
-        }
 
         /* Facebook-Style Notification Panel */
         .notification-panel {
-            position: absolute;
-            top: 65px;
-            right: 55px;
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
             width: 360px;
             max-height: 480px;
             background-color: white;
@@ -184,6 +226,7 @@
             display: none;
             animation: slideDown 0.2s ease-out;
         }
+
 
         .notification-panel.active {
             display: block;
@@ -352,29 +395,9 @@
 
         /* Floating Fire Report Button */
         .fire-report-btn {
-            position: fixed;
-            bottom: 40px;
-            left: 50%;
-            transform: translateX(-50%);
-            padding: 15px 25px;
-            background: linear-gradient(to right, #800000, #a30000);
-            color: white;
-            font-size: 18px;
-            font-weight: bold;
-            border-radius: 25px;
-            cursor: pointer;
-            text-align: center;
-            z-index: 600;
-            text-decoration: none;
-            box-shadow: 0 5px 12px rgba(255,0,0,0.4);
-            transition: all 0.3s;
-            display: inline-block;
+            display: none;
         }
 
-        .fire-report-btn:hover {
-            transform: translateX(-50%) translateY(-2px);
-            box-shadow: 0 8px 16px rgba(255,0,0,0.5);
-        }
 
         @media (max-width: 600px) {
             .fire-report-btn {
@@ -400,37 +423,41 @@
     <!-- Map -->
     <div id="map"></div>
 
-    <!-- Top Bar -->
+    <!-- Bottom Navigation Bar -->
     <div class="top-bar">
-        <div class="logo-section">
-            <img src="images/FireTackrlogo.png" class="logo-icon" alt="Fire Logo">
-            <div class="logo-text">FireTrackr</div>
+        <!-- Notification Bell -->
+        <div class="notification-bell" id="notificationBell">
+            <span class="bell-icon">🔔</span>
+            <span id="notification-badge" class="badge">0</span>
         </div>
 
-        <div class="top-bar-controls">
-            <!-- Notification Bell Icon -->
-            <div class="notification-bell" id="notificationBell">
-                <span class="bell-icon">🔔</span>
-                <span id="notification-badge" class="badge">0</span>
-            </div>
+        <!-- My Profile -->
+        <a href="userProf.html" class="nav-item">
+            <span class="nav-icon">👤</span>
+        </a>
 
-            <!-- Burger -->
-            <div class="burger" id="burger">
-                <div></div>
-                <div></div>
-                <div></div>
-            </div>
-        </div>
+        <!-- Report Button - Center -->
+        <a href="alert.html" class="report-btn">
+            <span class="report-icon">🔥</span>
+            <span class="report-label">Report</span>
+        </a>
 
-        <!-- Dropdown -->
-        <div class="dropdown" id="dropdown">
-            <a href="userProf.html">👤 My Profile</a>
-            <a href="Setting.html">⚙️ Settings</a>
-            <a href="login.html">🚪 Logout</a>
-            <a href="viewreport.html">👀 View Report</a>
-        </div>
+        <!-- Settings -->
+        <a href="Setting.html" class="nav-item">
+            <span class="nav-icon">⚙️</span>
+        </a>
 
+        <!-- View Report -->
+        <a href="viewreport.html" class="nav-item">
+            <span class="nav-icon">👀</span>
+        </a>
+
+        <!-- Logout -->
+        <a href="login.html" class="nav-item">
+            <span class="nav-icon">🚪</span>
+        </a>
     </div>
+
 
     <!-- Facebook-Style Notification Panel -->
     <div id="notification-panel" class="notification-panel">
@@ -467,40 +494,20 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const burger = document.getElementById('burger');
-            const dropdown = document.getElementById('dropdown');
             const notificationBell = document.getElementById('notificationBell');
             const notificationPanel = document.getElementById('notification-panel');
-            
-            // Burger menu toggle
-            burger.addEventListener('click', (e) => {
-                e.stopPropagation();
-                dropdown.classList.toggle('active');
-                notificationPanel.classList.remove('active');
-            });
             
             // Notification bell toggle
             notificationBell.addEventListener('click', (e) => {
                 e.stopPropagation();
                 notificationPanel.classList.toggle('active');
-                dropdown.classList.remove('active');
             });
             
-            // Close menus when clicking outside
+            // Close notification panel when clicking outside
             document.addEventListener('click', (e) => {
-                if (!burger.contains(e.target) && !dropdown.contains(e.target)) {
-                    dropdown.classList.remove('active');
-                }
                 if (!notificationBell.contains(e.target) && !notificationPanel.contains(e.target)) {
                     notificationPanel.classList.remove('active');
                 }
-            });
-            
-            // Close dropdown when clicking a link
-            dropdown.querySelectorAll('a').forEach(link => {
-                link.addEventListener('click', () => {
-                    dropdown.classList.remove('active');
-                });
             });
         });
 
