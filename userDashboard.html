@@ -20,18 +20,35 @@
 
         #map {
             width: 100%;
-            height: calc(100% - 70px);
+            height: calc(100% - 130px);
+            margin-top: 60px;
             background: #f0f0f0;
         }
 
-        /* Top Bar */
+        /* Header Bar */
+        .header-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background-color: #800000;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 15px;
+            z-index: 600;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        /* Top Bar - Bottom Navigation */
         .top-bar {
             position: fixed;
             bottom: 0;
             left: 0;
             right: 0;
             height: 70px;
-            background-color: #000;
+            background-color: #800000;
             display: flex;
             align-items: center;
             justify-content: space-around;
@@ -42,7 +59,9 @@
 
 
         .logo-section {
-            display: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
         .logo-text {
@@ -60,6 +79,29 @@
             align-items: center;
             justify-content: center;
             font-size: 24px;
+        }
+
+        /* Logout Button */
+        .logout-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: rgba(255,255,255,0.1);
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .logout-btn:hover {
+            background-color: rgba(255,255,255,0.2);
+        }
+
+        .logout-icon {
+            font-size: 20px;
+            color: white;
         }
 
         .top-bar-controls {
@@ -183,7 +225,7 @@
             align-items: center;
             justify-content: center;
             padding: 0 5px;
-            border: 2px solid #000;
+            border: 2px solid #800000;
         }
 
         .notification-bell .badge.active {
@@ -420,6 +462,18 @@
 
 <body>
 
+    <!-- Header -->
+    <div class="header-bar">
+        <div class="logo-section">
+            <img src="images/FireTackrlogo.png" class="logo-icon" alt="Fire Logo">
+            <div class="logo-text">FireTrackr</div>
+        </div>
+        <!-- Logout Button in Top Right -->
+        <a href="login.html" class="logout-btn">
+            <span class="logout-icon">🚪</span>
+        </a>
+    </div>
+
     <!-- Map -->
     <div id="map"></div>
 
@@ -450,11 +504,6 @@
         <!-- View Report -->
         <a href="viewreport.html" class="nav-item">
             <span class="nav-icon">👀</span>
-        </a>
-
-        <!-- Logout -->
-        <a href="login.html" class="nav-item">
-            <span class="nav-icon">🚪</span>
         </a>
     </div>
 
