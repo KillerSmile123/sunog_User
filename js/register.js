@@ -1,17 +1,6 @@
 const API_BASE = "https://backend-3-hqil.onrender.com"; // Updated to Render URL
 
-// --- Splash Screen Transition ---
-window.addEventListener('load', () => {
-  setTimeout(() => {
-    const splash = document.getElementById('splashScreen');
-    const register = document.getElementById('registerContainer');
-    splash.style.opacity = '0';
-    setTimeout(() => {
-      splash.style.display = 'none';
-      register.classList.add('active');
-    }, 800);
-  }, 2000);
-});
+
 
 // --- Loading Helpers ---
 function showLoading(buttonId, text = 'Loading...') {
