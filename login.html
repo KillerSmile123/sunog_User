@@ -20,22 +20,24 @@
       width: 320px;
       text-align: center;
     }
+    h2 {
+      color: #800000;
+      margin-bottom: 20px;
+    }
     input {
-      width: 90%; padding: 10px; margin: 10px 0; 
+      width: 90%; padding: 12px; margin: 10px 0; 
       border-radius: 8px; border: 1px solid #ccc;
+      font-size: 16px;
     }
     button {
       padding: 12px 20px; background-color: #800000; color: white;
       border: none; border-radius: 10px; cursor: pointer; width: 95%;
-      margin-top: 10px;
+      margin-top: 10px; font-size: 16px;
     }
     button:hover { background-color: #a30000; }
     button:disabled {
       background-color: #ccc;
       cursor: not-allowed;
-    }
-    .otp-section {
-      display: none;
     }
     .message {
       padding: 10px;
@@ -45,38 +47,41 @@
     }
     .success { background-color: #d4edda; color: #155724; }
     .error { background-color: #f8d7da; color: #721c24; }
-    .info { background-color: #d1ecf1; color: #0c5460; }
+    .register-link {
+      margin-top: 15px;
+      font-size: 14px;
+    }
+    .register-link a {
+      color: #800000;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    .register-link a:hover {
+      text-decoration: underline;
+    }
   </style>
 </head>
 <body>
   <div class="login-container">
-    <h2>User Login</h2>
+    <h2>🔥 S.U.N.O.G Login</h2>
+    <p style="color: #666; font-size: 14px; margin-bottom: 20px;">
+      Quick Login for Emergency Reports
+    </p>
     
     <div id="messageBox"></div>
     
-    <!-- Step 1: Email Input -->
-    <div id="emailSection">
-      <form id="emailForm">
-        <input type="email" id="gmail" placeholder="Gmail Address" required>
-        <button type="submit" id="sendOtpBtn">Send OTP</button>
-      </form>
-    </div>
+    <form id="loginForm">
+      <input type="email" id="gmail" placeholder="Enter your Gmail" required autofocus>
+      <button type="submit" id="loginBtn">Login</button>
+    </form>
 
-    <!-- Step 2: OTP Input -->
-    <div id="otpSection" class="otp-section">
-      <p class="info">OTP has been sent to your email</p>
-      <form id="otpForm">
-        <input type="text" id="otp" placeholder="Enter 6-digit OTP" 
-               maxlength="6" pattern="[0-9]{6}" required>
-        <button type="submit" id="verifyOtpBtn">Verify & Login</button>
-        <button type="button" id="resendOtpBtn">Resend OTP</button>
-      </form>
+    <div class="register-link">
+      Don't have an account? <a href="register.html">Register here</a>
     </div>
   </div>
 
   <script>
     const API_URL = 'https://backend-3-hqil.onrender.com';
-    let userEmail = '';
 
     // Save token
     function saveToken(token) {
@@ -84,7 +89,7 @@
     }
 
     // Show message
-    function showMessage(message, type = 'info') {
+    function showMessage(message, type = 'error') {
       const messageBox = document.getElementById('messageBox');
       messageBox.innerHTML = `<div class="message ${type}">${message}</div>`;
       setTimeout(() => {
@@ -92,65 +97,27 @@
       }, 5000);
     }
 
-    // Step 1: Send OTP
-    document.getElementById('emailForm').addEventListener('submit', async (e) => {
+    // Login
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       
-      const gmail = document.getElementById('gmail').value;
-      userEmail = gmail;
-      const sendOtpBtn = document.getElementById('sendOtpBtn');
+      const gmail = document.getElementById('gmail').value.trim();
+      const loginBtn = document.getElementById('loginBtn');
       
-      sendOtpBtn.disabled = true;
-      sendOtpBtn.textContent = 'Sending...';
+      if (!gmail) {
+        showMessage('Please enter your Gmail address', 'error');
+        return;
+      }
+
+      loginBtn.disabled = true;
+      loginBtn.textContent = 'Logging in...';
 
       try {
-        const response = await fetch(`${API_URL}/user/send-otp`, {
+        const response = await fetch(`${API_URL}/user/login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
           body: JSON.stringify({ gmail })
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-          showMessage('OTP sent successfully! Check your email.', 'success');
-          document.getElementById('emailSection').style.display = 'none';
-          document.getElementById('otpSection').style.display = 'block';
-        } else {
-          showMessage(data.message || 'Failed to send OTP', 'error');
-          sendOtpBtn.disabled = false;
-          sendOtpBtn.textContent = 'Send OTP';
-        }
-      } catch (err) {
-        console.error(err);
-        showMessage('Something went wrong. Please try again.', 'error');
-        sendOtpBtn.disabled = false;
-        sendOtpBtn.textContent = 'Send OTP';
-      }
-    });
-
-    // Step 2: Verify OTP
-    document.getElementById('otpForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      
-      const otp = document.getElementById('otp').value;
-      const verifyOtpBtn = document.getElementById('verifyOtpBtn');
-      
-      if (otp.length !== 6) {
-        showMessage('Please enter a valid 6-digit OTP', 'error');
-        return;
-      }
-
-      verifyOtpBtn.disabled = true;
-      verifyOtpBtn.textContent = 'Verifying...';
-
-      try {
-        const response = await fetch(`${API_URL}/user/verify-otp`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ gmail: userEmail, otp })
         });
 
         const data = await response.json();
@@ -163,45 +130,15 @@
             window.location.href = 'userDashboard.html';
           }, 1000);
         } else {
-          showMessage(data.message || 'Invalid OTP', 'error');
-          verifyOtpBtn.disabled = false;
-          verifyOtpBtn.textContent = 'Verify & Login';
+          showMessage(data.message || 'Login failed. Please check your email.', 'error');
+          loginBtn.disabled = false;
+          loginBtn.textContent = 'Login';
         }
       } catch (err) {
         console.error(err);
-        showMessage('Something went wrong. Please try again.', 'error');
-        verifyOtpBtn.disabled = false;
-        verifyOtpBtn.textContent = 'Verify & Login';
-      }
-    });
-
-    // Resend OTP
-    document.getElementById('resendOtpBtn').addEventListener('click', async () => {
-      const resendBtn = document.getElementById('resendOtpBtn');
-      resendBtn.disabled = true;
-      resendBtn.textContent = 'Sending...';
-
-      try {
-        const response = await fetch(`${API_URL}/user/send-otp`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ gmail: userEmail })
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-          showMessage('OTP resent successfully!', 'success');
-        } else {
-          showMessage(data.message || 'Failed to resend OTP', 'error');
-        }
-      } catch (err) {
-        console.error(err);
-        showMessage('Something went wrong. Please try again.', 'error');
-      } finally {
-        resendBtn.disabled = false;
-        resendBtn.textContent = 'Resend OTP';
+        showMessage('Connection error. Please try again.', 'error');
+        loginBtn.disabled = false;
+        loginBtn.textContent = 'Login';
       }
     });
   </script>

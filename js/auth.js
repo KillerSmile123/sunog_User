@@ -7,7 +7,7 @@ const API_URL = 'https://backend-3-hqil.onrender.com';
 // USER AUTHENTICATION & REGISTRATION SCRIPT
 // ==============================
 
-// Save token (using sessionStorage for security)
+// Save token
 function saveToken(token) {
   sessionStorage.setItem("user_token", token);
 }
@@ -58,11 +58,14 @@ function loadUserInfo(user) {
 }
 
 // ==============================
-// SEND OTP FUNCTION
+// LOGIN FUNCTION (Gmail Only)
 // ==============================
-async function sendOTP(gmail) {
+async function loginUser(event) {
+  event.preventDefault();
+  const gmail = document.getElementById("gmail").value;
+
   try {
-    const response = await fetch(`${API_URL}/user/send-otp`, {
+    const response = await fetch(`${API_URL}/user/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: 'include',
@@ -70,37 +73,16 @@ async function sendOTP(gmail) {
     });
 
     const data = await response.json();
-    return { success: response.ok, data };
-  } catch (err) {
-    console.error(err);
-    return { success: false, error: "Network error" };
-  }
-}
-
-// ==============================
-// VERIFY OTP & LOGIN FUNCTION
-// ==============================
-async function verifyOTPAndLogin(gmail, otp) {
-  try {
-    const response = await fetch(`${API_URL}/user/verify-otp`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: 'include',
-      body: JSON.stringify({ gmail, otp })
-    });
-
-    const data = await response.json();
-    
     if (response.ok && data.token) {
       saveToken(data.token);
       sessionStorage.setItem("user_info", JSON.stringify(data.user));
-      return { success: true, data };
+      window.location.href = "userDashboard.html";
     } else {
-      return { success: false, message: data.message || "Invalid OTP" };
+      alert(data.message || "Login failed!");
     }
   } catch (err) {
     console.error(err);
-    return { success: false, error: "Network error" };
+    alert("Something went wrong. Try again!");
   }
 }
 
@@ -182,5 +164,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const registerForm = document.getElementById("registerForm");
   if (registerForm) {
     registerForm.addEventListener("submit", registerUser);
+  }
+
+  // Attach login form if exists
+  const loginForm = document.getElementById("loginForm");
+  if (loginForm) {
+    loginForm.addEventListener("submit", loginUser);
   }
 });
