@@ -26,10 +26,8 @@ function connectSSE(userId) {
   console.log(`🔌 Connecting to SSE for user ${userId}...`);
   
   try {
-    // Connect to SSE endpoint
-    eventSource = new EventSource(`${NOTIFICATION_API_BASE}/sse/notifications/${userId}`, {
-      withCredentials: true
-    });
+    // ✅ OPTION 1: Remove withCredentials (if you don't need cookies)
+    eventSource = new EventSource(`${NOTIFICATION_API_BASE}/sse/notifications/${userId}`);
 
     eventSource.onopen = () => {
       console.log('✅ SSE connected - notifications will arrive instantly!');

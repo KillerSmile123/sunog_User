@@ -1,3 +1,5 @@
+//dashboard.js
+
 // ✅ DEFINE API_BASE AT THE TOP
 const API_BASE = "https://backend-3-hqil.onrender.com";
 
@@ -44,16 +46,21 @@ if (navigator.geolocation) {
 const burger = document.getElementById('burger');
 const dropdown = document.getElementById('dropdown');
 
-burger.addEventListener('click', () => {
-    dropdown.style.display = dropdown.style.display === 'flex' ? 'none' : 'flex';
-});
+// ✅ FIXED: Check if elements exist before adding listeners
+if (burger && dropdown) {
+    burger.addEventListener('click', () => {
+        dropdown.style.display = dropdown.style.display === 'flex' ? 'none' : 'flex';
+    });
 
-// Close dropdown when clicking outside
-window.addEventListener('click', (e) => {
-    if (!burger.contains(e.target) && !dropdown.contains(e.target)) {
-        dropdown.style.display = 'none';
-    }
-});
+    // Close dropdown when clicking outside
+    window.addEventListener('click', (e) => {
+        if (!burger.contains(e.target) && !dropdown.contains(e.target)) {
+            dropdown.style.display = 'none';
+        }
+    });
+} else {
+    console.warn('⚠️ Burger menu elements not found in DOM');
+}
 
 // -------------------------------
 // 4. Notification System
