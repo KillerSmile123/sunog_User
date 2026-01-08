@@ -1,9 +1,9 @@
-// Load reports from localStorage (saved by alert.js)
+// Render Backend Configuration
 let allReports = [];
 let currentFilter = 'all';
 const API_BASE = "https://backend-3-hqil.onrender.com";
 
-// Get address from coordinates using reverse geocoding (optional)
+// Get address from coordinates using reverse geocoding
 async function getAddressFromCoordinates(lat, lon) {
   try {
     const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
@@ -50,23 +50,29 @@ function formatTimestamp(isoString) {
   return `${year}-${month}-${day} ${hours}:${minutes}`;
 }
 
-// Load alerts from backend and merge with localStorage
+// Load alerts from Render backend
 async function loadAlertsFromBackend() {
   try {
     const userId = localStorage.getItem('userId');
     if (!userId) {
-      console.warn('No user ID found');
-      loadAlertsFromStorage(); // Fallback to localStorage
+      console.error('No user ID found. Please log in again.');
+      showError('Please log in to view your reports.');
       return;
     }
 
+    // Show loading state
+    showLoading();
+
     const response = await fetch(`${API_BASE}/get_user_alerts/${userId}`, {
       method: 'GET',
-      credentials: 'include'
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json'
+      }
     });
 
     if (!response.ok) {
-      throw new Error('Failed to fetch alerts from backend');
+      throw new Error(`Backend error: ${response.status}`);
     }
 
     const data = await response.json();
@@ -103,43 +109,59 @@ async function loadAlertsFromBackend() {
       // Reverse to show newest first
       allReports.reverse();
       
-      console.log("Loaded reports from backend:", allReports);
+      console.log("Loaded reports from Render backend:", allReports);
+      hideLoading();
+      loadReports();
+      updateAddresses();
+    } else {
+      console.warn('No alerts found in response');
+      allReports = [];
+      hideLoading();
+      loadReports();
     }
   } catch (error) {
     console.error("Error loading alerts from backend:", error);
-    loadAlertsFromStorage(); // Fallback to localStorage
+    hideLoading();
+    showError('Failed to load reports. Please check your connection and try again.');
+    allReports = [];
+    loadReports();
   }
 }
 
-// Load alerts from localStorage (fallback)
-function loadAlertsFromStorage() {
-  try {
-    const alertList = JSON.parse(localStorage.getItem("alertList")) || [];
-    allReports = alertList.map(alert => {
-      const receivedAlerts = JSON.parse(localStorage.getItem("receivedAlerts")) || [];
-      const isReceived = receivedAlerts.includes(alert.id);
+// Show loading state
+function showLoading() {
+  const reportsList = document.getElementById('reportsList');
+  const noReports = document.getElementById('noReports');
+  
+  reportsList.style.display = 'none';
+  noReports.style.display = 'block';
+  noReports.innerHTML = `
+    <div class="no-reports-icon">⏳</div>
+    <p>Loading your reports...</p>
+  `;
+}
 
-      return {
-        id: alert.id,
-        description: alert.description || 'Fire Incident',
-        location: { lat: parseFloat(alert.latitude), lng: parseFloat(alert.longitude) },
-        address: `${alert.latitude}, ${alert.longitude}`,
-        timestamp: formatTimestamp(alert.timestamp),
-        status: isReceived ? 'received' : 'pending',
-        photo: alert.mediaType === 'image' ? alert.media : null,
-        video: alert.mediaType === 'video' ? alert.media : null,
-        userName: alert.user?.name || 'Unknown User',
-        rawAlert: alert
-      };
-    });
+// Hide loading state
+function hideLoading() {
+  const noReports = document.getElementById('noReports');
+  noReports.innerHTML = `
+    <div class="no-reports-icon">📋</div>
+    <p>No reports found</p>
+  `;
+}
 
-    allReports.reverse();
-    
-    console.log("Loaded reports from localStorage:", allReports);
-  } catch (error) {
-    console.error("Error loading alerts from storage:", error);
-    allReports = [];
-  }
+// Show error message
+function showError(message) {
+  const reportsList = document.getElementById('reportsList');
+  const noReports = document.getElementById('noReports');
+  
+  reportsList.style.display = 'none';
+  noReports.style.display = 'block';
+  noReports.innerHTML = `
+    <div class="no-reports-icon">⚠️</div>
+    <p>${message}</p>
+    <button onclick="loadAlertsFromBackend()" style="margin-top: 15px; padding: 10px 20px; background: #ff6b6b; color: white; border: none; border-radius: 5px; cursor: pointer;">Retry</button>
+  `;
 }
 
 // Update address for reports
@@ -154,9 +176,14 @@ async function updateAddresses() {
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
-  loadAlertsFromBackend(); // Try backend first
-  loadReports();
-  updateAddresses();
+  // Check if user is logged in
+  const userId = localStorage.getItem('userId');
+  if (!userId) {
+    window.location.href = 'login.html'; // Redirect to login if not logged in
+    return;
+  }
+  
+  loadAlertsFromBackend(); // Load from Render backend
   setupFilterButtons();
   setupModalClose();
   startUpdatePoller();
@@ -396,4 +423,9 @@ async function checkForUpdates() {
 // Periodically check for updates (every 30 seconds)
 function startUpdatePoller() {
   setInterval(checkForUpdates, 30000);
+}
+
+// Refresh reports manually
+function refreshReports() {
+  loadAlertsFromBackend();
 }

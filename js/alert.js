@@ -80,28 +80,12 @@ window.onload = function () {
     console.log("Reporter name auto-filled:", fullName);
   }
 
-  // ✅ CRITICAL: Set user_id field
-  if (userId) {
-    let userIdInput = document.getElementById('user_id');
-    
-    // If hidden input doesn't exist, create it
-    if (!userIdInput) {
-      userIdInput = document.createElement('input');
-      userIdInput.type = 'hidden';
-      userIdInput.id = 'user_id';
-      userIdInput.name = 'user_id';
-      document.getElementById('alertForm').appendChild(userIdInput);
-      console.log("✅ Created hidden user_id input field");
-    }
-    
-    userIdInput.value = userId;
-    console.log("✅ User ID field set to:", userId);
-    
-    // Verify it was set
-    console.log("   Verification - user_id field value:", document.getElementById('user_id').value);
-  } else {
+  // ✅ CRITICAL: Verify user is logged in
+  if (!userId) {
     console.error("❌ CRITICAL: No user_id found in localStorage!");
-    alert("⚠️ Warning: User ID not found. Alerts may not be linkable to your account.");
+    alert("⚠️ Please log in to submit alerts.");
+    window.location.href = 'login.html'; // Redirect to login
+    return;
   }
 
   // Initialize user object if not exists
@@ -141,12 +125,12 @@ document.addEventListener("DOMContentLoaded", () => {
     submitButton.disabled = true;
 
     try {
-      // ✅ CRITICAL: Verify user_id before sending
-      const userIdField = document.getElementById('user_id');
-      if (!userIdField || !userIdField.value) {
-        throw new Error("User ID is missing. Please refresh the page and try again.");
+      // ✅ CRITICAL: Get user_id from localStorage
+      const userId = localStorage.getItem('userId');
+      if (!userId) {
+        throw new Error("User ID is missing. Please log in and try again.");
       }
-      console.log("✅ User ID verified before sending:", userIdField.value);
+      console.log("✅ User ID verified before sending:", userId);
 
       // Check storage before starting
       const currentStorageSize = getStorageSize();
@@ -205,8 +189,28 @@ document.addEventListener("DOMContentLoaded", () => {
         user
       };
 
-      // ✅ Log form data being sent (INCLUDING user_id)
-      const formData = new FormData(form);
+      // ✅ FIXED: Manually create FormData and explicitly add user_id
+      const formData = new FormData();
+      
+      // Add user_id FIRST (most critical field)
+      formData.append('user_id', userId);
+      
+      // Add all other form fields
+      formData.append('description', description);
+      formData.append('latitude', latitude);
+      formData.append('longitude', longitude);
+      formData.append('barangay', form.querySelector('input[name="barangay"]')?.value || '');
+      formData.append('reporter_name', form.querySelector('input[name="reporter_name"]')?.value || user.name);
+      
+      // Add media files
+      if (photo) {
+        formData.append('photo', photo);
+      }
+      if (video) {
+        formData.append('video', video);
+      }
+
+      // ✅ Log everything being sent
       console.log("📤 SENDING ALERT WITH:");
       console.log("  - User ID:", formData.get('user_id'));
       console.log("  - Reporter:", formData.get('reporter_name'));
@@ -231,6 +235,13 @@ document.addEventListener("DOMContentLoaded", () => {
       if (contentType && contentType.includes("application/json")) {
         result = await response.json();
         console.log("✅ Server response data:", result);
+        
+        // ✅ Verify the response contains user_id
+        if (result.user_id) {
+          console.log("✅ Backend confirmed user_id was saved:", result.user_id);
+        } else {
+          console.warn("⚠️ Backend response does not contain user_id!");
+        }
       } else {
         const textResult = await response.text();
         console.log("Server response (text):", textResult);
