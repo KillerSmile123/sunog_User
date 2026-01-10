@@ -1,40 +1,8 @@
+// alert.js - Fully connected to backend, NO localStorage
+
 const API_BASE = "https://backend-3-hqil.onrender.com";
 
 let gpsReady = false;
-
-// Storage management functions
-function getStorageSize() {
-  let total = 0;
-  for (let key in localStorage) {
-    if (localStorage.hasOwnProperty(key)) {
-      total += localStorage[key].length + key.length;
-    }
-  }
-  return total;
-}
-
-function formatBytes(bytes) {
-  if (bytes === 0) return '0 Bytes';
-  const k = 1024;
-  const sizes = ['Bytes', 'KB', 'MB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-}
-
-function cleanupOldAlerts(maxAlerts = 5) {
-  try {
-    const list = JSON.parse(localStorage.getItem("alertList")) || [];
-    if (list.length > maxAlerts) {
-      const trimmedList = list.slice(-maxAlerts);
-      localStorage.setItem("alertList", JSON.stringify(trimmedList));
-      console.log(`Cleaned up alerts. Kept ${trimmedList.length} most recent alerts.`);
-      return true;
-    }
-  } catch (error) {
-    console.error("Error during cleanup:", error);
-  }
-  return false;
-}
 
 window.onload = function () {
   // Get GPS coordinates
@@ -59,11 +27,11 @@ window.onload = function () {
     alert("Geolocation is not supported by this browser.");
   }
 
-  // ✅ Get user info from localStorage
+  // ✅ Get user info from localStorage (only for session data)
   const fullName = localStorage.getItem('fullName');
   const userId = localStorage.getItem('userId');
   
-  console.log("📱 User loaded from localStorage:");
+  console.log("📱 User session loaded:");
   console.log("   Name:", fullName);
   console.log("   ID:", userId);
   
@@ -80,20 +48,12 @@ window.onload = function () {
     console.log("Reporter name auto-filled:", fullName);
   }
 
-  // ✅ CRITICAL: Verify user is logged in
+  // ✅ Verify user is logged in
   if (!userId) {
-    console.error("❌ CRITICAL: No user_id found in localStorage!");
+    console.error("❌ No user_id found in session!");
     alert("⚠️ Please log in to submit alerts.");
-    window.location.href = 'login.html'; // Redirect to login
+    window.location.href = 'login.html';
     return;
-  }
-
-  // Initialize user object if not exists
-  if (!localStorage.getItem("user")) {
-    localStorage.setItem("user", JSON.stringify({
-      name: fullName || "Unknown",
-      contact: "09123456789"
-    }));
   }
 };
 
@@ -125,21 +85,12 @@ document.addEventListener("DOMContentLoaded", () => {
     submitButton.disabled = true;
 
     try {
-      // ✅ CRITICAL: Get user_id from localStorage
+      // ✅ Get user_id from session storage
       const userId = localStorage.getItem('userId');
       if (!userId) {
         throw new Error("User ID is missing. Please log in and try again.");
       }
       console.log("✅ User ID verified before sending:", userId);
-
-      // Check storage before starting
-      const currentStorageSize = getStorageSize();
-      console.log(`Current localStorage usage: ${formatBytes(currentStorageSize)}`);
-      
-      if (currentStorageSize > 4 * 1024 * 1024) {
-        console.log("Storage is getting full, cleaning up...");
-        cleanupOldAlerts(5);
-      }
 
       const photo = form.querySelector('input[name="photo"]').files[0];
       const video = form.querySelector('input[name="video"]').files[0];
@@ -158,6 +109,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const latitude = parseFloat(latValue);
       const longitude = parseFloat(lonValue);
       const description = form.querySelector('textarea[name="description"]').value || "Fire Incident";
+      const fullName = localStorage.getItem('fullName') || "Unknown";
 
       // Check server connection first
       console.log("Checking server connection...");
@@ -166,30 +118,7 @@ document.addEventListener("DOMContentLoaded", () => {
         throw new Error("Cannot connect to server. Please check your internet connection and try again.");
       }
 
-      // Prepare local alert object for localStorage
-      const getBase64 = f => new Promise((res, rej) => {
-        const r = new FileReader();
-        r.onload = () => res(r.result);
-        r.onerror = e => rej(e);
-        r.readAsDataURL(f);
-      });
-
-      const mediaBase64 = photo ? await getBase64(photo) : await getBase64(video);
-      const mediaType = photo ? "image" : "video";
-      const user = JSON.parse(localStorage.getItem("user")) || { name: "Unknown", contact: "N/A" };
-
-      const alertData = {
-        id: "2025-" + Date.now(),
-        latitude,
-        longitude,
-        description,
-        timestamp: new Date().toISOString(),
-        media: mediaBase64,
-        mediaType,
-        user
-      };
-
-      // ✅ FIXED: Manually create FormData and explicitly add user_id
+      // ✅ Create FormData for backend submission
       const formData = new FormData();
       
       // Add user_id FIRST (most critical field)
@@ -200,7 +129,7 @@ document.addEventListener("DOMContentLoaded", () => {
       formData.append('latitude', latitude);
       formData.append('longitude', longitude);
       formData.append('barangay', form.querySelector('input[name="barangay"]')?.value || '');
-      formData.append('reporter_name', form.querySelector('input[name="reporter_name"]')?.value || user.name);
+      formData.append('reporter_name', form.querySelector('input[name="reporter_name"]')?.value || fullName);
       
       // Add media files
       if (photo) {
@@ -210,8 +139,8 @@ document.addEventListener("DOMContentLoaded", () => {
         formData.append('video', video);
       }
 
-      // ✅ Log everything being sent
-      console.log("📤 SENDING ALERT WITH:");
+      // ✅ Log what's being sent
+      console.log("📤 SENDING ALERT TO BACKEND:");
       console.log("  - User ID:", formData.get('user_id'));
       console.log("  - Reporter:", formData.get('reporter_name'));
       console.log("  - Barangay:", formData.get('barangay'));
@@ -221,6 +150,7 @@ document.addEventListener("DOMContentLoaded", () => {
       console.log("  - Latitude:", latitude);
       console.log("  - Longitude:", longitude);
 
+      // ✅ Send to backend
       const response = await fetch(`${API_BASE}/send_alert`, {
         method: "POST",
         body: formData,
@@ -248,50 +178,11 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       if (response.ok) {
-        // Save to localStorage with storage management
-        try {
-          const list = JSON.parse(localStorage.getItem("alertList")) || [];
-          list.push(alertData);
-          
-          try {
-            localStorage.setItem("alertList", JSON.stringify(list));
-          } catch (storageError) {
-            if (storageError.name === 'QuotaExceededError') {
-              console.log("Storage quota exceeded, cleaning up old alerts...");
-              
-              let managedList = [...list];
-              while (managedList.length > 10) {
-                managedList.shift();
-              }
-              
-              try {
-                localStorage.setItem("alertList", JSON.stringify(managedList));
-                console.log(`Cleaned up storage. Kept ${managedList.length} most recent alerts.`);
-              } catch (secondError) {
-                console.log("Still not enough space, saving without media...");
-                const lightweightAlert = {
-                  id: alertData.id,
-                  latitude: alertData.latitude,
-                  longitude: alertData.longitude,
-                  description: alertData.description,
-                  timestamp: alertData.timestamp,
-                  mediaType: alertData.mediaType,
-                  user: alertData.user,
-                  mediaNote: "Media saved on server only (storage full)"
-                };
-                
-                managedList[managedList.length - 1] = lightweightAlert;
-                localStorage.setItem("alertList", JSON.stringify(managedList));
-              }
-            } else {
-              throw storageError;
-            }
-          }
-        } catch (error) {
-          console.error("Failed to save to localStorage:", error);
-        }
-
-        console.log("✅ Alert submitted successfully! Redirecting...");
+        // ✅ SUCCESS - NO LOCALSTORAGE SAVING
+        // All data is now on the backend!
+        console.log("✅ Alert submitted successfully to backend!");
+        console.log("✅ No localStorage usage - data is fully on backend");
+        
         form.reset();
         window.location.href = "report submit.html";
       } else {
