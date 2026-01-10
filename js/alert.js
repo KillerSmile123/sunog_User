@@ -1,9 +1,9 @@
-// alert.js - Multiple Images with Camera/Gallery Choice
+// alert.js - Unified Media Upload (Images + Videos in One Field)
 
 const API_BASE = "https://backend-3-hqil.onrender.com";
 
 let gpsReady = false;
-let selectedImages = []; // Store multiple images
+let selectedMedia = []; // Store both images and videos
 
 window.onload = function () {
   // Get GPS coordinates
@@ -57,47 +57,52 @@ window.onload = function () {
     return;
   }
 
-  // Initialize image upload system
-  initializeImageUpload();
+  // Initialize unified media upload system
+  initializeMediaUpload();
 };
 
 // ============================================
-// IMAGE UPLOAD SYSTEM
+// UNIFIED MEDIA UPLOAD SYSTEM
 // ============================================
 
-function initializeImageUpload() {
+function initializeMediaUpload() {
+  // Find the form's media section (could be photo or video input)
   const photoInput = document.querySelector('input[name="photo"]');
+  const videoInput = document.querySelector('input[name="video"]');
+  
   if (!photoInput) return;
 
-  // Hide the original file input
-  photoInput.style.display = 'none';
+  // Hide original inputs
+  if (photoInput) photoInput.style.display = 'none';
+  if (videoInput) videoInput.style.display = 'none';
 
-  // Create camera input (hidden)
+  // Get the container (parent of photo input)
+  const container = photoInput.parentElement;
+
+  // Create hidden inputs for camera and gallery
   const cameraInput = document.createElement('input');
   cameraInput.type = 'file';
-  cameraInput.accept = 'image/*';
-  cameraInput.capture = 'environment'; // Use back camera
-  cameraInput.multiple = true; // Allow multiple images
+  cameraInput.accept = 'image/*,video/*'; // ✅ Accept both images and videos
+  cameraInput.capture = 'environment';
+  cameraInput.multiple = true;
   cameraInput.style.display = 'none';
   cameraInput.id = 'cameraInput';
 
-  // Create gallery input (hidden)
   const galleryInput = document.createElement('input');
   galleryInput.type = 'file';
-  galleryInput.accept = 'image/*';
-  galleryInput.multiple = true; // Allow multiple images
+  galleryInput.accept = 'image/*,video/*'; // ✅ Accept both images and videos
+  galleryInput.multiple = true;
   galleryInput.style.display = 'none';
   galleryInput.id = 'galleryInput';
 
-  // Add inputs to form
-  photoInput.parentElement.appendChild(cameraInput);
-  photoInput.parentElement.appendChild(galleryInput);
+  container.appendChild(cameraInput);
+  container.appendChild(galleryInput);
 
-  // Create custom upload button
+  // Create unified upload button
   const uploadBtn = document.createElement('button');
   uploadBtn.type = 'button';
   uploadBtn.className = 'upload-btn';
-  uploadBtn.innerHTML = '<i class="fas fa-camera"></i> Choose Images';
+  uploadBtn.innerHTML = '<i class="fas fa-photo-video"></i> Add Photos/Videos';
   uploadBtn.style.cssText = `
     padding: 12px 24px;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -122,7 +127,7 @@ function initializeImageUpload() {
 
   // Create preview container
   const previewContainer = document.createElement('div');
-  previewContainer.id = 'imagePreviewContainer';
+  previewContainer.id = 'mediaPreviewContainer';
   previewContainer.style.cssText = `
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
@@ -130,29 +135,23 @@ function initializeImageUpload() {
     margin-top: 10px;
   `;
 
-  // Add button and preview to form
-  photoInput.parentElement.insertBefore(uploadBtn, photoInput);
-  photoInput.parentElement.insertBefore(previewContainer, photoInput);
+  // Add to form
+  container.insertBefore(uploadBtn, photoInput);
+  container.insertBefore(previewContainer, photoInput);
 
-  // Handle upload button click - show modal
-  uploadBtn.addEventListener('click', showImageSourceModal);
-
-  // Handle camera input change
-  cameraInput.addEventListener('change', (e) => handleImageSelection(e.target.files));
-
-  // Handle gallery input change
-  galleryInput.addEventListener('change', (e) => handleImageSelection(e.target.files));
+  // Event handlers
+  uploadBtn.addEventListener('click', showMediaSourceModal);
+  cameraInput.addEventListener('change', (e) => handleMediaSelection(e.target.files));
+  galleryInput.addEventListener('change', (e) => handleMediaSelection(e.target.files));
 }
 
 // Show modal to choose camera or gallery
-function showImageSourceModal() {
-  // Remove existing modal if any
-  const existingModal = document.getElementById('imageSourceModal');
+function showMediaSourceModal() {
+  const existingModal = document.getElementById('mediaSourceModal');
   if (existingModal) existingModal.remove();
 
-  // Create modal
   const modal = document.createElement('div');
-  modal.id = 'imageSourceModal';
+  modal.id = 'mediaSourceModal';
   modal.style.cssText = `
     position: fixed;
     top: 0;
@@ -178,7 +177,7 @@ function showImageSourceModal() {
       animation: slideUp 0.3s;
     ">
       <h3 style="margin: 0 0 20px 0; text-align: center; color: #333; font-size: 22px;">
-        <i class="fas fa-images" style="color: #667eea;"></i> Choose Image Source
+        <i class="fas fa-photo-video" style="color: #667eea;"></i> Add Media
       </h3>
       
       <button id="cameraBtn" style="
@@ -195,7 +194,7 @@ function showImageSourceModal() {
         box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
         transition: transform 0.2s;
       ">
-        <i class="fas fa-camera"></i> Take Photo
+        <i class="fas fa-camera"></i> Use Camera
       </button>
       
       <button id="galleryBtn" style="
@@ -231,7 +230,6 @@ function showImageSourceModal() {
     </div>
   `;
 
-  // Add animations
   const style = document.createElement('style');
   style.textContent = `
     @keyframes fadeIn {
@@ -253,7 +251,6 @@ function showImageSourceModal() {
 
   document.body.appendChild(modal);
 
-  // Handle button clicks
   document.getElementById('cameraBtn').addEventListener('click', () => {
     modal.remove();
     document.getElementById('cameraInput').click();
@@ -268,7 +265,6 @@ function showImageSourceModal() {
     modal.remove();
   });
 
-  // Close on background click
   modal.addEventListener('click', (e) => {
     if (e.target === modal) {
       modal.remove();
@@ -276,27 +272,27 @@ function showImageSourceModal() {
   });
 }
 
-// Handle selected images
-function handleImageSelection(files) {
+// Handle selected media (images + videos)
+function handleMediaSelection(files) {
   if (!files || files.length === 0) return;
 
-  // Add new files to selectedImages array
   Array.from(files).forEach(file => {
-    if (file.type.startsWith('image/')) {
-      selectedImages.push(file);
+    // ✅ Accept both images and videos
+    if (file.type.startsWith('image/') || file.type.startsWith('video/')) {
+      selectedMedia.push(file);
     }
   });
 
-  console.log(`📸 Total images selected: ${selectedImages.length}`);
-  updateImagePreviews();
+  console.log(`📸 Total media selected: ${selectedMedia.length}`);
+  updateMediaPreviews();
 }
 
-// Update image previews
-function updateImagePreviews() {
-  const container = document.getElementById('imagePreviewContainer');
+// Update media previews
+function updateMediaPreviews() {
+  const container = document.getElementById('mediaPreviewContainer');
   container.innerHTML = '';
 
-  selectedImages.forEach((file, index) => {
+  selectedMedia.forEach((file, index) => {
     const wrapper = document.createElement('div');
     wrapper.style.cssText = `
       position: relative;
@@ -305,19 +301,59 @@ function updateImagePreviews() {
       box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     `;
 
-    const img = document.createElement('img');
-    img.style.cssText = `
-      width: 100%;
-      height: 100px;
-      object-fit: cover;
-    `;
+    // ✅ Check if it's an image or video
+    const isVideo = file.type.startsWith('video/');
 
-    // Create preview URL
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
+    if (isVideo) {
+      // Video preview
+      const video = document.createElement('video');
+      video.style.cssText = `
+        width: 100%;
+        height: 100px;
+        object-fit: cover;
+      `;
+      video.controls = false;
+      video.muted = true;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        video.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+
+      // Video icon overlay
+      const playIcon = document.createElement('div');
+      playIcon.innerHTML = '<i class="fas fa-play-circle"></i>';
+      playIcon.style.cssText = `
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: white;
+        font-size: 32px;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        pointer-events: none;
+      `;
+
+      wrapper.appendChild(video);
+      wrapper.appendChild(playIcon);
+    } else {
+      // Image preview
+      const img = document.createElement('img');
+      img.style.cssText = `
+        width: 100%;
+        height: 100px;
+        object-fit: cover;
+      `;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+
+      wrapper.appendChild(img);
+    }
 
     // Remove button
     const removeBtn = document.createElement('button');
@@ -339,20 +375,23 @@ function updateImagePreviews() {
       align-items: center;
       justify-content: center;
       box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      z-index: 10;
     `;
 
     removeBtn.addEventListener('click', () => {
-      selectedImages.splice(index, 1);
-      updateImagePreviews();
+      selectedMedia.splice(index, 1);
+      updateMediaPreviews();
     });
 
-    wrapper.appendChild(img);
     wrapper.appendChild(removeBtn);
     container.appendChild(wrapper);
   });
 
-  // Show count
-  if (selectedImages.length > 0) {
+  // Show count with breakdown
+  if (selectedMedia.length > 0) {
+    const images = selectedMedia.filter(f => f.type.startsWith('image/')).length;
+    const videos = selectedMedia.filter(f => f.type.startsWith('video/')).length;
+    
     const countBadge = document.createElement('div');
     countBadge.style.cssText = `
       text-align: center;
@@ -360,7 +399,11 @@ function updateImagePreviews() {
       color: #667eea;
       font-weight: 600;
     `;
-    countBadge.innerHTML = `<i class="fas fa-images"></i> ${selectedImages.length} image${selectedImages.length > 1 ? 's' : ''} selected`;
+    countBadge.innerHTML = `
+      <i class="fas fa-photo-video"></i> ${selectedMedia.length} file${selectedMedia.length > 1 ? 's' : ''} selected
+      ${images > 0 ? `<span style="margin-left: 10px;"><i class="fas fa-image"></i> ${images}</span>` : ''}
+      ${videos > 0 ? `<span style="margin-left: 10px;"><i class="fas fa-video"></i> ${videos}</span>` : ''}
+    `;
     container.appendChild(countBadge);
   }
 }
@@ -390,21 +433,17 @@ document.addEventListener("DOMContentLoaded", () => {
   form.addEventListener("submit", async function (e) {
     e.preventDefault();
 
-    // Show loading state
     const submitButton = form.querySelector('button[type="submit"]');
     const originalButtonText = submitButton.textContent;
     submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
     submitButton.disabled = true;
 
     try {
-      // Get user_id from session storage
       const userId = localStorage.getItem('userId');
       if (!userId) {
         throw new Error("User ID is missing. Please log in and try again.");
       }
       console.log("✅ User ID verified before sending:", userId);
-
-      const video = form.querySelector('input[name="video"]').files[0];
 
       const latValue = document.getElementById("latitude").value;
       const lonValue = document.getElementById("longitude").value;
@@ -413,9 +452,9 @@ document.addEventListener("DOMContentLoaded", () => {
         throw new Error("Location is required. Please enable GPS and wait until it's loaded.");
       }
 
-      // ✅ Check if at least one image or video is selected
-      if (selectedImages.length === 0 && !video) {
-        throw new Error("You must attach at least one photo or a video.");
+      // ✅ Check if at least one media file is selected
+      if (selectedMedia.length === 0) {
+        throw new Error("You must attach at least one photo or video.");
       }
 
       const latitude = parseFloat(latValue);
@@ -423,49 +462,49 @@ document.addEventListener("DOMContentLoaded", () => {
       const description = form.querySelector('textarea[name="description"]').value || "Fire Incident";
       const fullName = localStorage.getItem('fullName') || "Unknown";
 
-      // Check server connection first
+      // Check server connection
       console.log("Checking server connection...");
       const serverReachable = await checkServerConnection();
       if (!serverReachable) {
         throw new Error("Cannot connect to server. Please check your internet connection and try again.");
       }
 
-      // Create FormData for backend submission
+      // Create FormData
       const formData = new FormData();
       
-      // Add user_id FIRST (most critical field)
       formData.append('user_id', userId);
-      
-      // Add all other form fields
       formData.append('description', description);
       formData.append('latitude', latitude);
       formData.append('longitude', longitude);
       formData.append('barangay', form.querySelector('input[name="barangay"]')?.value || '');
       formData.append('reporter_name', form.querySelector('input[name="reporter_name"]')?.value || fullName);
       
-      // ✅ Add multiple images
-      selectedImages.forEach((image, index) => {
-        formData.append('photos', image); // Use 'photos' (plural) for multiple images
+      // ✅ Separate images and videos
+      const images = selectedMedia.filter(f => f.type.startsWith('image/'));
+      const videos = selectedMedia.filter(f => f.type.startsWith('video/'));
+      
+      // Add images
+      images.forEach((image, index) => {
+        formData.append('photos', image);
         console.log(`  - Image ${index + 1}:`, image.name);
       });
       
-      // Add video if present
-      if (video) {
-        formData.append('video', video);
-      }
+      // Add videos
+      videos.forEach((video, index) => {
+        formData.append('videos', video);
+        console.log(`  - Video ${index + 1}:`, video.name);
+      });
 
-      // Log what's being sent
       console.log("📤 SENDING ALERT TO BACKEND:");
       console.log("  - User ID:", formData.get('user_id'));
       console.log("  - Reporter:", formData.get('reporter_name'));
       console.log("  - Barangay:", formData.get('barangay'));
       console.log("  - Description:", formData.get('description'));
-      console.log("  - Images:", selectedImages.length);
-      console.log("  - Video:", video ? video.name : 'None');
+      console.log("  - Images:", images.length);
+      console.log("  - Videos:", videos.length);
       console.log("  - Latitude:", latitude);
       console.log("  - Longitude:", longitude);
 
-      // Send to backend
       const response = await fetch(`${API_BASE}/send_alert`, {
         method: "POST",
         body: formData,
@@ -493,10 +532,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (response.ok) {
         console.log("✅ Alert submitted successfully to backend!");
-        console.log("✅ No localStorage usage - data is fully on backend");
         
-        // Clear selected images
-        selectedImages = [];
+        // Clear selected media
+        selectedMedia = [];
         
         form.reset();
         window.location.href = "report submit.html";
