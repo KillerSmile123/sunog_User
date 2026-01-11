@@ -1,4 +1,4 @@
-// alert.js - Unified Media Upload (Images + Videos in One Field)
+// alert.js - Unified Media Upload with LIVE CAMERA PREVIEW
 
 const API_BASE = "https://backend-3-hqil.onrender.com";
 
@@ -79,23 +79,14 @@ function initializeMediaUpload() {
   // Get the container (parent of photo input)
   const container = photoInput.parentElement;
 
-  // Create hidden inputs for camera and gallery
-  const cameraInput = document.createElement('input');
-  cameraInput.type = 'file';
-  cameraInput.accept = 'image/*,video/*'; // ✅ Accept both images and videos
-  cameraInput.capture = 'environment';
-  cameraInput.multiple = true;
-  cameraInput.style.display = 'none';
-  cameraInput.id = 'cameraInput';
-
+  // Create hidden input for gallery (camera will use live preview)
   const galleryInput = document.createElement('input');
   galleryInput.type = 'file';
-  galleryInput.accept = 'image/*,video/*'; // ✅ Accept both images and videos
+  galleryInput.accept = 'image/*,video/*';
   galleryInput.multiple = true;
   galleryInput.style.display = 'none';
   galleryInput.id = 'galleryInput';
 
-  container.appendChild(cameraInput);
   container.appendChild(galleryInput);
 
   // Create unified upload button
@@ -141,7 +132,6 @@ function initializeMediaUpload() {
 
   // Event handlers
   uploadBtn.addEventListener('click', showMediaSourceModal);
-  cameraInput.addEventListener('change', (e) => handleMediaSelection(e.target.files));
   galleryInput.addEventListener('change', (e) => handleMediaSelection(e.target.files));
 }
 
@@ -251,9 +241,10 @@ function showMediaSourceModal() {
 
   document.body.appendChild(modal);
 
+  // ✅ CHANGED: Use live camera preview instead of file input
   document.getElementById('cameraBtn').addEventListener('click', () => {
     modal.remove();
-    document.getElementById('cameraInput').click();
+    showLiveCameraModal();
   });
 
   document.getElementById('galleryBtn').addEventListener('click', () => {
@@ -272,7 +263,204 @@ function showMediaSourceModal() {
   });
 }
 
-// Handle selected media (images + videos)
+// ============================================
+// 📷 LIVE CAMERA PREVIEW MODAL
+// ============================================
+
+function showLiveCameraModal() {
+  const modal = document.createElement('div');
+  modal.id = 'liveCameraModal';
+  modal.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.95);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 10001;
+    padding: 20px;
+  `;
+
+  modal.innerHTML = `
+    <div style="width: 100%; max-width: 600px;">
+      <!-- Camera Preview -->
+      <video id="cameraPreview" autoplay playsinline style="
+        width: 100%;
+        border-radius: 12px;
+        background: #000;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+      "></video>
+      
+      <!-- Controls -->
+      <div style="display: flex; gap: 15px; margin-top: 20px; justify-content: center; flex-wrap: wrap;">
+        <button id="capturePhotoBtn" style="
+          padding: 15px 30px;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: white;
+          border: none;
+          border-radius: 10px;
+          font-size: 18px;
+          font-weight: 600;
+          cursor: pointer;
+          box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+          transition: transform 0.2s;
+        ">
+          <i class="fas fa-camera"></i> Capture Photo
+        </button>
+        
+        <button id="switchCameraBtn" style="
+          padding: 15px 30px;
+          background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+          color: white;
+          border: none;
+          border-radius: 10px;
+          font-size: 18px;
+          font-weight: 600;
+          cursor: pointer;
+          box-shadow: 0 4px 15px rgba(79, 172, 254, 0.4);
+          transition: transform 0.2s;
+        ">
+          <i class="fas fa-sync-alt"></i> Switch
+        </button>
+        
+        <button id="closeLiveCameraBtn" style="
+          padding: 15px 30px;
+          background: #f1f3f5;
+          color: #666;
+          border: none;
+          border-radius: 10px;
+          font-size: 18px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: background 0.2s;
+        ">
+          <i class="fas fa-times"></i> Close
+        </button>
+      </div>
+      
+      <!-- Hidden canvas for capturing -->
+      <canvas id="captureCanvas" style="display: none;"></canvas>
+    </div>
+  `;
+
+  const style = document.createElement('style');
+  style.textContent = `
+    #capturePhotoBtn:hover, #switchCameraBtn:hover {
+      transform: scale(1.05);
+    }
+    #closeLiveCameraBtn:hover {
+      background: #e9ecef;
+    }
+  `;
+  document.head.appendChild(style);
+
+  document.body.appendChild(modal);
+
+  const video = document.getElementById('cameraPreview');
+  const canvas = document.getElementById('captureCanvas');
+  const captureBtn = document.getElementById('capturePhotoBtn');
+  const switchBtn = document.getElementById('switchCameraBtn');
+  const closeBtn = document.getElementById('closeLiveCameraBtn');
+  
+  let stream = null;
+  let currentFacingMode = 'environment'; // Start with back camera
+
+  // Start camera function
+  async function startCamera(facingMode) {
+    try {
+      // Stop existing stream
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+
+      // Request camera access
+      stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          facingMode: facingMode,
+          width: { ideal: 1920 },
+          height: { ideal: 1080 }
+        },
+        audio: false 
+      });
+      
+      video.srcObject = stream;
+      console.log('✅ Camera started:', facingMode);
+    } catch (error) {
+      console.error('❌ Camera access error:', error);
+      alert('Unable to access camera. Please check permissions and try again.');
+      modal.remove();
+    }
+  }
+
+  // Initialize camera
+  startCamera(currentFacingMode);
+
+  // Capture photo button
+  captureBtn.addEventListener('click', () => {
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0);
+    
+    canvas.toBlob(blob => {
+      const timestamp = Date.now();
+      const file = new File([blob], `camera_photo_${timestamp}.jpg`, { type: 'image/jpeg' });
+      
+      selectedMedia.push(file);
+      updateMediaPreviews();
+      
+      console.log('📸 Photo captured:', file.name);
+      
+      // Show success feedback
+      captureBtn.innerHTML = '<i class="fas fa-check"></i> Captured!';
+      captureBtn.style.background = 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)';
+      
+      setTimeout(() => {
+        captureBtn.innerHTML = '<i class="fas fa-camera"></i> Capture Photo';
+        captureBtn.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+      }, 1000);
+      
+    }, 'image/jpeg', 0.9);
+  });
+
+  // Switch camera button
+  switchBtn.addEventListener('click', () => {
+    currentFacingMode = currentFacingMode === 'environment' ? 'user' : 'environment';
+    startCamera(currentFacingMode);
+    
+    // Visual feedback
+    switchBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Switching...';
+    setTimeout(() => {
+      switchBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Switch';
+    }, 500);
+  });
+
+  // Close camera button
+  closeBtn.addEventListener('click', () => {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      console.log('🛑 Camera stopped');
+    }
+    modal.remove();
+  });
+
+  // Close when clicking outside
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+      modal.remove();
+    }
+  });
+}
+
+// Handle selected media (images + videos from gallery)
 function handleMediaSelection(files) {
   if (!files || files.length === 0) return;
 
