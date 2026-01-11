@@ -26,7 +26,6 @@ function connectSSE(userId) {
   console.log(`🔌 Connecting to SSE for user ${userId}...`);
   
   try {
-    // ✅ OPTION 1: Remove withCredentials (if you don't need cookies)
     eventSource = new EventSource(`${NOTIFICATION_API_BASE}/sse/notifications/${userId}`);
 
     eventSource.onopen = () => {
@@ -63,12 +62,10 @@ function connectSSE(userId) {
       console.error('❌ SSE error:', error);
       console.log('EventSource readyState:', eventSource?.readyState);
       
-      // ReadyState: 0 = CONNECTING, 1 = OPEN, 2 = CLOSED
       if (eventSource?.readyState === 2) {
         console.log('Connection closed, attempting to reconnect...');
         eventSource.close();
         
-        // Attempt to reconnect with exponential backoff
         if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
           reconnectAttempts++;
           const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
@@ -112,26 +109,22 @@ let pollingInterval = null;
 function fallbackToPolling(userId) {
   console.log('📡 Falling back to polling mode...');
   
-  // Clear any existing polling
   if (pollingInterval) {
     clearInterval(pollingInterval);
   }
   
-  // Initial fetch
   fetchNotifications(userId).then(notifications => {
     renderNotificationsInPanel(notifications);
     const unreadCount = notifications.filter(n => !n.read).length;
     updateNotificationBadge(unreadCount);
   });
   
-  // Poll every 5 seconds
   pollingInterval = setInterval(async () => {
     try {
       const notifications = await fetchNotifications(userId);
       const unreadCount = notifications.filter(n => !n.read).length;
       updateNotificationBadge(unreadCount);
       
-      // Update panel if visible
       const panel = document.getElementById('notification-panel');
       if (panel && panel.style.display === 'block') {
         renderNotificationsInPanel(notifications);
@@ -140,19 +133,6 @@ function fallbackToPolling(userId) {
       console.error('Polling error:', error);
     }
   }, 5000);
-}
-
-function showConnectionError() {
-  const container = document.getElementById('notification-list');
-  if (container && container.children.length === 0) {
-    container.innerHTML = `
-      <div class="no-notifications">
-        <div class="no-notifications-icon">⚠️</div>
-        <p>Connection Lost</p>
-        <span>Using backup notification system</span>
-      </div>
-    `;
-  }
 }
 
 // ========================================
@@ -229,7 +209,6 @@ function showBrowserNotification(notification) {
 // ========================================
 
 function showToastNotification(notification) {
-  // Create toast element
   const toast = document.createElement('div');
   toast.className = 'notification-toast';
   toast.innerHTML = `
@@ -237,11 +216,11 @@ function showToastNotification(notification) {
     <div class="toast-content">
       <strong>${notification.title}</strong>
       <p>${notification.message}</p>
+      ${notification.resolve_time ? `<small style="color: #666;">🕒 ${notification.resolve_time}</small>` : ''}
     </div>
     <button class="toast-close" onclick="this.parentElement.remove()">×</button>
   `;
   
-  // Add styles if not already present
   if (!document.getElementById('toast-styles')) {
     const style = document.createElement('style');
     style.id = 'toast-styles';
@@ -282,6 +261,11 @@ function showToastNotification(notification) {
         font-size: 14px;
         color: #666;
       }
+      .toast-content small {
+        display: block;
+        margin-top: 4px;
+        font-size: 12px;
+      }
       .toast-close {
         background: none;
         border: none;
@@ -302,7 +286,6 @@ function showToastNotification(notification) {
   
   document.body.appendChild(toast);
   
-  // Auto-remove after 5 seconds
   setTimeout(() => {
     toast.style.animation = 'slideIn 0.3s ease-out reverse';
     setTimeout(() => toast.remove(), 300);
@@ -589,10 +572,8 @@ document.addEventListener('DOMContentLoaded', () => {
   if (userId) {
     console.log(`✅ Initializing notifications for user ${userId}`);
     
-    // Request browser notification permission
     requestNotificationPermission();
     
-    // Try SSE first, fallback to polling if it fails
     if (isSSESupported) {
       console.log('📡 Attempting SSE connection...');
       connectSSE(userId);
@@ -606,7 +587,6 @@ document.addEventListener('DOMContentLoaded', () => {
     console.warn('❌ No user ID found in localStorage');
   }
   
-  // Clean up on page unload
   window.addEventListener('beforeunload', () => {
     disconnectSSE();
     if (pollingInterval) {
