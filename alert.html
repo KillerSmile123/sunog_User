@@ -4,45 +4,19 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>F.I.R.E</title>
-  <link rel="stylesheet" href="css/alert.css?v=4.2" />
-  <style>
-    /* Additional styles for new fields */
-    .form-group {
-      margin-bottom: 15px;
-    }
-    
-    .form-group label {
-      display: block;
-      margin-bottom: 5px;
-      font-weight: 600;
-      color: #333;
-    }
-    
-    .form-group input[type="text"],
-    .form-group select {
-      width: 100%;
-      padding: 12px;
-      border: 2px solid #ddd;
-      border-radius: 8px;
-      font-size: 16px;
-      box-sizing: border-box;
-      transition: border-color 0.3s;
-    }
-    
-    .form-group input[type="text"]:focus,
-    .form-group select:focus {
-      outline: none;
-      border-color: #ff6b35;
-    }
-    
-    .required {
-      color: #ff6b35;
-    }
-  </style>
+  
+  <!-- Font Awesome for Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Main Styles -->
+  <link rel="stylesheet" href="css/alert.css">
+  
+  <!-- Camera Modal Styles -->
+  <link rel="stylesheet" href="css/camera-modal.css">
 </head>
 
 <body>
-  <!-- Top Navigation (No Dropdown) -->
+  <!-- Top Navigation -->
   <div class="top-nav">
     <a href="userDashboard.html" class="back-arrow">⬅ Back</a>
     <span>FIRE REPORT</span>
@@ -50,41 +24,44 @@
 
   <!-- Alert Form -->
   <div class="alert-container">
-    <h2 id="welcomeMessage">Welcome, !</h2>
+    <h2 id="welcomeMessage">Welcome!</h2>
 
     <form id="alertForm" enctype="multipart/form-data">
       
-      <!-- ✅ Auto-filled Reporter Name (from registration) -->
+      <!-- Hidden fields (auto-filled by JavaScript) -->
       <input type="hidden" id="reporter_name" name="reporter_name" value="" />
-      
-      <!-- ✅ Hidden barangay field -->
       <input type="hidden" id="barangay" name="barangay" value="" />
-
-      <!-- Description -->
-      <textarea 
-        name="description" 
-        placeholder="Describe the fire incident... (optional)"
-      ></textarea>
-
-      <!-- Photo Upload -->
-      <label class="file-label" for="photo">📷 Upload Photo</label>
-      <input type="file" name="photo" id="photo" accept="image/*" />
-
-      <!-- Video Upload -->
-      <label class="file-label" for="video">🎥 Upload Video</label>
-      <input type="file" name="video" id="video" accept="video/*" />
-
-      <!-- Hidden GPS Coordinates -->
       <input type="hidden" id="latitude" name="latitude" />
       <input type="hidden" id="longitude" name="longitude" />
 
-      <div class="preview" id="preview"></div>
+      <!-- Description -->
+      <div class="form-group">
+        <label for="description">
+          <i class="fas fa-file-alt"></i> Description
+        </label>
+        <textarea 
+          id="description"
+          name="description" 
+          placeholder="Describe the fire incident... (optional)"
+        ></textarea>
+      </div>
 
-      <button type="submit">🔥 Send Fire Alert</button>
+      <!-- Hidden file inputs (replaced by custom JavaScript upload button) -->
+      <input type="file" name="photo" id="photo" accept="image/*" style="display: none;" />
+      <input type="file" name="video" id="video" accept="video/*" style="display: none;" />
+
+      <!-- Media upload container (JavaScript will add button here) -->
+      <div id="mediaUploadContainer"></div>
+
+      <!-- Submit Button -->
+      <button type="submit">
+        <i class="fas fa-fire"></i> Send Fire Alert
+      </button>
     </form>
   </div>
 
-  <script src="../js/alert.js"></script>
+  <!-- Load JavaScript -->
+  <script src="js/alert.js"></script>
 
 </body>
 </html>
