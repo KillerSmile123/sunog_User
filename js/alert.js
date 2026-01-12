@@ -6,17 +6,38 @@ let gpsReady = false;
 let selectedMedia = [];
 
 window.onload = function () {
-  // Get GPS coordinates
+  // Get GPS coordinates and reverse geocode
   if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(
-      function (position) {
+      async function (position) {
         const latInput = document.getElementById("latitude");
         const lonInput = document.getElementById("longitude");
+        const barangayInput = document.getElementById("barangay");
+        
         if (latInput && lonInput) {
-          latInput.value = position.coords.latitude;
-          lonInput.value = position.coords.longitude;
+          const lat = position.coords.latitude;
+          const lon = position.coords.longitude;
+          
+          latInput.value = lat;
+          lonInput.value = lon;
           gpsReady = true;
-          console.log("GPS coordinates loaded:", position.coords.latitude, position.coords.longitude);
+          
+          console.log("📍 GPS coordinates loaded:", lat, lon);
+          
+          // ✅ Get barangay from coordinates
+          try {
+            const barangay = await getBarangayFromCoordinates(lat, lon);
+            if (barangayInput) {
+              barangayInput.value = barangay;
+              barangayInput.readOnly = true;
+              console.log("✅ Barangay auto-filled:", barangay);
+            }
+          } catch (error) {
+            console.error("❌ Error getting barangay:", error);
+            if (barangayInput) {
+              barangayInput.value = "Unknown Location";
+            }
+          }
         }
       },
       function (error) {
@@ -40,13 +61,6 @@ window.onload = function () {
   const welcomeMessage = document.getElementById('welcomeMessage');
   if (welcomeMessage) {
     welcomeMessage.textContent = fullName ? `Welcome, ${fullName}!` : "Welcome!";
-  }
-
-  // Auto-fill the reporter_name field
-  const reporterNameInput = document.getElementById('reporter_name');
-  if (reporterNameInput && fullName) {
-    reporterNameInput.value = fullName;
-    console.log("Reporter name auto-filled:", fullName);
   }
 
   // Verify user is logged in
@@ -441,21 +455,21 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       const formData = new FormData();
-      
+
       formData.append('user_id', userId);
       formData.append('description', description);
       formData.append('latitude', latitude);
       formData.append('longitude', longitude);
-      formData.append('barangay', form.querySelector('input[name="barangay"]')?.value || '');
-      formData.append('reporter_name', form.querySelector('input[name="reporter_name"]')?.value || fullName);
-      
+      formData.append('barangay', form.querySelector('input[name="barangay"]')?.value || 'Unknown Location');
+      formData.append('reporter_name', fullName); // ✅ Use fullName directly from localStorage
+
       const images = selectedMedia.filter(f => f.type.startsWith('image/'));
       const videos = selectedMedia.filter(f => f.type.startsWith('video/'));
-      
+
       images.forEach((image) => {
         formData.append('photos', image);
       });
-      
+
       videos.forEach((video) => {
         formData.append('videos', video);
       });
