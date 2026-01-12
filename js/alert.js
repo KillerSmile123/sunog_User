@@ -5,6 +5,56 @@ const API_BASE = "https://backend-3-hqil.onrender.com";
 let gpsReady = false;
 let selectedMedia = [];
 
+
+// ============================================
+// REVERSE GEOCODING - Get Barangay from GPS
+// ============================================
+
+// ============================================
+// REVERSE GEOCODING - Get Barangay from GPS
+// ============================================
+
+async function getBarangayFromCoordinates(lat, lon) {
+  try {
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`,
+      {
+        headers: {
+          'User-Agent': 'FireTrackr App'
+        }
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error('Geocoding failed');
+    }
+
+    const data = await response.json();
+    console.log("🗺️ Geocoding response:", data);
+
+    const address = data.address || {};
+    
+    const barangay = address.suburb || 
+                     address.neighbourhood || 
+                     address.village || 
+                     address.hamlet || 
+                     address.town || 
+                     address.city || 
+                     address.municipality || 
+                     'Unknown Location';
+    
+    const cleanBarangay = barangay.replace(/^(Barangay|Brgy\.?)\s*/i, '').trim();
+    
+    console.log("📍 Extracted location:", cleanBarangay);
+
+    return cleanBarangay;
+
+  } catch (error) {
+    console.error("❌ Reverse geocoding error:", error);
+    return "Unknown Location";
+  }
+}
+
 window.onload = function () {
   // Get GPS coordinates and reverse geocode
   if (navigator.geolocation) {
@@ -24,12 +74,11 @@ window.onload = function () {
           
           console.log("📍 GPS coordinates loaded:", lat, lon);
           
-          // ✅ Get barangay from coordinates
+          // Get barangay from coordinates
           try {
             const barangay = await getBarangayFromCoordinates(lat, lon);
             if (barangayInput) {
               barangayInput.value = barangay;
-              barangayInput.readOnly = true;
               console.log("✅ Barangay auto-filled:", barangay);
             }
           } catch (error) {
