@@ -26,32 +26,34 @@
   <div class="alert-container">
     <h2 id="welcomeMessage">Welcome!</h2>
 
-    <form id="alertForm">
-  
-      <div class="form-group">
-        <label for="description">Description:</label>
-        <textarea name="description" id="description" rows="4" 
-                  placeholder="Describe the fire incident..."></textarea>
-      </div>
+    <form id="alertForm" enctype="multipart/form-data">
+      
+      <!-- Hidden fields (auto-filled by JavaScript) -->
+      <input type="hidden" id="reporter_name" name="reporter_name" value="" />
+      <input type="hidden" id="barangay" name="barangay" value="" />
+      <input type="hidden" id="latitude" name="latitude" />
+      <input type="hidden" id="longitude" name="longitude" />
 
-      <!-- ✅ Barangay (auto-filled from GPS) -->
+      <!-- Description -->
       <div class="form-group">
-        <label for="barangay">
-          <i class="fas fa-map-marker-alt"></i> Location:
+        <label for="description">
+          <i class="fas fa-file-alt"></i> Description
         </label>
-        <input type="text" name="barangay" id="barangay" 
-              placeholder="Getting location..." readonly>
-        <small style="color: #666; font-size: 12px;">
-          Location detected from your GPS coordinates
-        </small>
+        <textarea 
+          id="description"
+          name="description" 
+          placeholder="Describe the fire incident... (optional)"
+        ></textarea>
       </div>
 
-      <!-- Hidden GPS fields -->
-      <input type="hidden" id="latitude" name="latitude">
-      <input type="hidden" id="longitude" name="longitude">
+      <!-- Hidden file inputs (replaced by custom JavaScript upload button) -->
+      <input type="file" name="photo" id="photo" accept="image/*" style="display: none;" />
+      <input type="file" name="video" id="video" accept="video/*" style="display: none;" />
 
-      <!-- Media upload will be added by JavaScript -->
+      <!-- Media upload container (JavaScript will add button here) -->
+      <div id="mediaUploadContainer"></div>
 
+      <!-- Submit Button -->
       <button type="submit">
         <i class="fas fa-fire"></i> Send Fire Alert
       </button>
