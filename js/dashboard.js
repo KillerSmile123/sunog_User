@@ -132,13 +132,17 @@ function showNotification(notification) {
 // Check for new notifications from backend
 async function checkNotifications() {
     try {
-        const userId = localStorage.getItem('userId');
-        if (!userId) {
+        // ✅ FIX: Get userId from sessionStorage where login saved it
+        const userInfo = JSON.parse(sessionStorage.getItem('user_info'));
+        
+        if (!userInfo || !userInfo.id) {
             console.log('No user ID found, skipping notification check');
             return;
         }
         
-        console.log(`🔔 Checking notifications for user: ${userId}`);
+        const userId = userInfo.id;
+        
+        console.log(`🔔 Checking notifications for user: ${userId} (${userInfo.fullname})`);
         
         const response = await fetch(`${API_BASE}/get_user_notifications/${userId}`, {
             method: 'GET',
@@ -169,8 +173,8 @@ async function checkNotifications() {
                 }
             });
             
-            // Store in localStorage for view report page
-            localStorage.setItem('userNotifications', JSON.stringify(data.notifications));
+            // Store in sessionStorage (to match where user data is stored)
+            sessionStorage.setItem('userNotifications', JSON.stringify(data.notifications));
         }
     } catch (error) {
         console.error('Error checking notifications:', error);
@@ -209,14 +213,23 @@ function initializeNotifications() {
 // 5. Initialize on Page Load
 // -------------------------------
 document.addEventListener('DOMContentLoaded', () => {
-    // Get userId from localStorage (should be set during login)
-    const userId = localStorage.getItem('userId');
+    // ✅ FIX: Get user info from sessionStorage (where login saved it)
+    const userInfo = JSON.parse(sessionStorage.getItem('user_info'));
     
-    if (!userId) {
-        console.warn('No user ID found. Some features may not work properly.');
-        // You might want to redirect to login page here
-        // window.location.href = 'login.html';
+    if (!userInfo) {
+        console.warn('No user logged in. Redirecting to login...');
+        window.location.href = 'login.html';
+        return;
     }
+    
+    // Get the userId from the user_info object
+    const userId = userInfo.id;
+    
+    console.log('✅ Logged in user:', userInfo.fullname, '(ID:', userId, ')');
+    
+    // Store userId in a variable for easy access
+    window.currentUserId = userId;
+    window.currentUser = userInfo;
     
     // Start notification system
     initializeNotifications();
