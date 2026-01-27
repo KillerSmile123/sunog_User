@@ -81,66 +81,78 @@
   </div>
 
   <script>
-    const API_URL = 'https://backend-3-hqil.onrender.com';
+      const API_URL = 'https://backend-3-hqil.onrender.com';
 
-    // Save token
-    function saveToken(token) {
-      sessionStorage.setItem("user_token", token);
-    }
-
-    // Show message
-    function showMessage(message, type = 'error') {
-      const messageBox = document.getElementById('messageBox');
-      messageBox.innerHTML = `<div class="message ${type}">${message}</div>`;
-      setTimeout(() => {
-        messageBox.innerHTML = '';
-      }, 5000);
-    }
-
-    // Login
-    document.getElementById('loginForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      
-      const gmail = document.getElementById('gmail').value.trim();
-      const loginBtn = document.getElementById('loginBtn');
-      
-      if (!gmail) {
-        showMessage('Please enter your Gmail address', 'error');
-        return;
+      // Save token
+      function saveToken(token) {
+        sessionStorage.setItem("user_token", token);
       }
 
-      loginBtn.disabled = true;
-      loginBtn.textContent = 'Logging in...';
+      // Show message
+      function showMessage(message, type = 'error') {
+        const messageBox = document.getElementById('messageBox');
+        messageBox.innerHTML = `<div class="message ${type}">${message}</div>`;
+        setTimeout(() => {
+          messageBox.innerHTML = '';
+        }, 5000);
+      }
 
-      try {
-        const response = await fetch(`${API_URL}/user/login`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ gmail })
-        });
+      // Login
+      document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const gmail = document.getElementById('gmail').value.trim();
+        const loginBtn = document.getElementById('loginBtn');
+        
+        if (!gmail) {
+          showMessage('Please enter your Gmail address', 'error');
+          return;
+        }
 
-        const data = await response.json();
+        loginBtn.disabled = true;
+        loginBtn.textContent = 'Logging in...';
 
-        if (response.ok && data.token) {
-          saveToken(data.token);
-          sessionStorage.setItem("user_info", JSON.stringify(data.user));
-          showMessage('Login successful! Redirecting...', 'success');
-          setTimeout(() => {
-            window.location.href = 'userDashboard.html';
-          }, 1000);
-        } else {
-          showMessage(data.message || 'Login failed. Please check your email.', 'error');
+        try {
+          const response = await fetch(`${API_URL}/user/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ gmail })
+          });
+
+          const data = await response.json();
+
+          if (response.ok && data.token) {
+            saveToken(data.token);
+            
+            // Save to sessionStorage
+            sessionStorage.setItem("user_info", JSON.stringify(data.user));
+            
+            // ✅ ALSO save to localStorage for alert.js and userProf.js compatibility
+            localStorage.setItem("userId", data.user.id);
+            localStorage.setItem("fullName", data.user.fullname);
+            localStorage.setItem("address", data.user.address);
+            localStorage.setItem("gmail", data.user.gmail);
+            localStorage.setItem("mobile", data.user.mobile);
+            
+            console.log("✅ User logged in:", data.user.fullname, "(ID:", data.user.id, ")");
+            
+            showMessage('Login successful! Redirecting...', 'success');
+            setTimeout(() => {
+              window.location.href = 'userDashboard.html';
+            }, 1000);
+          } else {
+            showMessage(data.message || 'Login failed. Please check your email.', 'error');
+            loginBtn.disabled = false;
+            loginBtn.textContent = 'Login';
+          }
+        } catch (err) {
+          console.error(err);
+          showMessage('Connection error. Please try again.', 'error');
           loginBtn.disabled = false;
           loginBtn.textContent = 'Login';
         }
-      } catch (err) {
-        console.error(err);
-        showMessage('Connection error. Please try again.', 'error');
-        loginBtn.disabled = false;
-        loginBtn.textContent = 'Login';
-      }
-    });
+      });
   </script>
 </body>
 </html>
