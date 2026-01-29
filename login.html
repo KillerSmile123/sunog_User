@@ -8,13 +8,13 @@
     body, html {
       margin: 0; padding: 0;
       font-family: Arial, sans-serif;
-      background-color: #d3d3d3;
+      background-color: #ffffff;
       display: flex; justify-content: center; align-items: center;
       height: 100vh;
     }
     .login-container {
-      background: #f5f1e8;
-      border: 4px solid #800000;
+      background: #2c3e50;
+      border: 4px solid #34495e;
       border-radius: 20px;
       padding: 30px;
       width: 320px;
@@ -35,7 +35,7 @@
       filter: brightness(1.2);
     }
     h2 {
-      color: #800000;
+      color: white;
       margin-bottom: 10px;
       font-size: 24px;
     }
@@ -45,13 +45,14 @@
       font-size: 16px;
     }
     button {
-      padding: 12px 20px; background-color: #800000; color: white;
+      padding: 12px 20px; background-color: #34495e; color: white;
       border: none; border-radius: 10px; cursor: pointer; width: 95%;
       margin-top: 10px; font-size: 16px;
+      transition: background-color 0.3s ease;
     }
-    button:hover { background-color: #a30000; }
+    button:hover { background-color: #4a6278; }
     button:disabled {
-      background-color: #ccc;
+      background-color: #7f8c8d;
       cursor: not-allowed;
     }
     .message {
@@ -65,14 +66,16 @@
     .register-link {
       margin-top: 15px;
       font-size: 14px;
+      color: white;
     }
     .register-link a {
-      color: #800000;
+      color: #ff6b6b;
       text-decoration: none;
       font-weight: bold;
     }
     .register-link a:hover {
       text-decoration: underline;
+      color: #ff8787;
     }
   </style>
 </head>
@@ -83,7 +86,7 @@
     </div>
     
     <h2>User Login</h2>
-    <p style="color: #666; font-size: 14px; margin-bottom: 20px;">
+    <p style="color: #fff; font-size: 14px; margin-bottom: 20px;">
       Quick Login for Emergency Reports
     </p>
     
