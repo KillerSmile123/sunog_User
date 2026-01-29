@@ -312,6 +312,8 @@ function playNotificationSound() {
 
 async function fetchNotifications(userId) {
   try {
+    console.log(`📡 Fetching notifications for user ${userId}...`);
+    
     const response = await fetch(`${NOTIFICATION_API_BASE}/get_user_notifications/${userId}`, {
       method: 'GET',
       credentials: 'include',
@@ -320,14 +322,19 @@ async function fetchNotifications(userId) {
       }
     });
     
+    console.log('📡 Response status:', response.status);
+    
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     
     const data = await response.json();
+    console.log('📡 Fetched data:', data);
+    console.log('📡 Notifications array:', data.notifications);
+    
     return data.notifications || [];
   } catch (error) {
-    console.error('Error fetching notifications:', error);
+    console.error('❌ Error fetching notifications:', error);
     return [];
   }
 }
@@ -416,9 +423,19 @@ function updateNotificationBadge(count) {
 
 function renderNotificationsInPanel(notifications) {
   const container = document.getElementById('notification-list');
-  if (!container) return;
+  
+  console.log('🎨 Rendering notifications:', {
+    containerExists: !!container,
+    notificationCount: notifications?.length || 0,
+    notifications: notifications
+  });
+  
+  if (!container) {
+    console.error('❌ notification-list container not found in DOM!');
+    return;
+  }
 
-  if (notifications.length === 0) {
+  if (!notifications || notifications.length === 0) {
     container.innerHTML = `
       <div class="no-notifications">
         <div class="no-notifications-icon">🔔</div>
@@ -431,6 +448,8 @@ function renderNotificationsInPanel(notifications) {
 
   container.innerHTML = '';
   const sorted = notifications.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+  console.log('📋 Rendering', sorted.length, 'notifications');
 
   sorted.forEach(notif => {
     const notifEl = document.createElement('div');
@@ -466,6 +485,8 @@ function renderNotificationsInPanel(notifications) {
     
     container.appendChild(notifEl);
   });
+  
+  console.log('✅ Notifications rendered successfully');
 }
 
 function getNotificationIcon(type) {
@@ -562,6 +583,21 @@ window.handleMarkAllAsRead = async () => {
   }
 };
 
+window.testNotifications = async function() {
+  const userId = getCurrentUserId();
+  console.log('🧪 Testing notifications for user:', userId);
+  
+  const notifications = await fetchNotifications(userId);
+  console.log('🧪 Fetched notifications:', notifications);
+  
+  renderNotificationsInPanel(notifications);
+  
+  const panel = document.getElementById('notification-panel');
+  if (panel) {
+    panel.style.display = 'block';
+  }
+};
+
 // ========================================
 // INITIALIZATION
 // ========================================
@@ -569,10 +605,29 @@ window.handleMarkAllAsRead = async () => {
 document.addEventListener('DOMContentLoaded', () => {
   const userId = getCurrentUserId();
   
+  console.log('🚀 DOM loaded, userId:', userId);
+  
+  // Verify notification panel exists
+  const panel = document.getElementById('notification-panel');
+  const list = document.getElementById('notification-list');
+  
+  console.log('🔍 DOM elements:', {
+    panelExists: !!panel,
+    listExists: !!list
+  });
+  
   if (userId) {
     console.log(`✅ Initializing notifications for user ${userId}`);
     
     requestNotificationPermission();
+    
+    // Initial fetch before SSE connection
+    fetchNotifications(userId).then(notifications => {
+      console.log('📋 Initial fetch completed:', notifications.length, 'notifications');
+      renderNotificationsInPanel(notifications);
+      const unreadCount = notifications.filter(n => !n.read).length;
+      updateNotificationBadge(unreadCount);
+    });
     
     if (isSSESupported) {
       console.log('📡 Attempting SSE connection...');
