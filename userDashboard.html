@@ -434,6 +434,88 @@
             color: #65676b;
         }
 
+        .notification-icon {
+    font-size: 28px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.notification-icon.warning {
+    background-color: #fff3cd;
+}
+
+.notification-icon.success {
+    background-color: #d1f2dd;
+}
+
+.notification-icon.error {
+    background-color: #f8d7da;
+}
+
+.notification-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.notification-content p {
+    margin: 0 0 4px 0;
+    font-size: 14px;
+    color: #050505;
+}
+
+.notification-content strong {
+    font-weight: 600;
+    color: #050505;
+}
+
+.notification-time {
+    font-size: 12px;
+    color: #65676b;
+    margin-top: 4px;
+}
+
+.notification-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-left: 8px;
+}
+
+.action-btn-primary,
+.action-btn-secondary {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.action-btn-primary {
+    background-color: #1877f2;
+    color: white;
+}
+
+.action-btn-primary:hover {
+    background-color: #145dbf;
+}
+
+.action-btn-secondary {
+    background-color: #e4e6eb;
+    color: #050505;
+}
+
+.action-btn-secondary:hover {
+    background-color: #d8dadf;
+}
+
         .no-notifications-icon {
             font-size: 64px;
             margin-bottom: 16px;
@@ -524,20 +606,18 @@
 
 
     <!-- Facebook-Style Notification Panel -->
-    <!-- Notification Panel -->
-        <div id="notification-panel" style="display: none;">
-        <div class="notification-header">
-            <h3>Notifications</h3>
-            <button onclick="handleMarkAllAsRead()">Mark all as read</button>
-            <button onclick="document.getElementById('notification-panel').style.display='none'">×</button>
-        </div>
-        <div class="notification-tabs">
-            <button class="tab-btn active">All</button>
-            <button class="tab-btn">Unread</button>
-        </div>
-        <div id="notification-list">
-            <!-- Notifications will be rendered here -->
-        </div>
+        <div id="notification-panel" class="notification-panel">
+            <div class="notification-panel-header">
+                <h3>Notifications</h3>
+                <button class="mark-all-btn" onclick="handleMarkAllAsRead()">Mark all as read</button>
+            </div>
+            <div class="notification-tabs">
+                <button class="notification-tab active">All</button>
+                <button class="notification-tab">Unread</button>
+            </div>
+            <div id="notification-list">
+                <!-- Notifications will be rendered here -->
+            </div>
         </div>
 
     <!-- Floating Fire Report Button -->
@@ -557,25 +637,36 @@
             const notificationBell = document.getElementById('notificationBell');
             const notificationPanel = document.getElementById('notification-panel');
             
-            // Notification bell toggle
-            notificationBell.addEventListener('click', (e) => {
-                e.stopPropagation();
-                notificationPanel.classList.toggle('active');
-            });
+            console.log('🔔 Setting up notification panel toggle');
+            console.log('Bell element:', notificationBell);
+            console.log('Panel element:', notificationPanel);
             
-            // Close notification panel when clicking outside
-            document.addEventListener('click', (e) => {
-                if (!notificationBell.contains(e.target) && !notificationPanel.contains(e.target)) {
-                    notificationPanel.classList.remove('active');
-                }
-            });
+            // Notification bell toggle
+            if (notificationBell && notificationPanel) {
+                notificationBell.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    console.log('🔔 Bell clicked');
+                    
+                    // Toggle display
+                    if (notificationPanel.style.display === 'none' || !notificationPanel.style.display) {
+                        notificationPanel.style.display = 'block';
+                        console.log('📂 Panel opened');
+                    } else {
+                        notificationPanel.style.display = 'none';
+                        console.log('📁 Panel closed');
+                    }
+                });
+                
+                // Close notification panel when clicking outside
+                document.addEventListener('click', (e) => {
+                    if (!notificationBell.contains(e.target) && !notificationPanel.contains(e.target)) {
+                        notificationPanel.style.display = 'none';
+                    }
+                });
+            } else {
+                console.error('❌ Notification elements not found!');
+            }
         });
-
-        function markAllAsRead() {
-            document.querySelectorAll('.notification-item.unread').forEach(item => {
-                item.classList.remove('unread');
-            });
-        }
     </script>
 
 </body>
