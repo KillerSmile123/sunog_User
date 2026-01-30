@@ -30,30 +30,51 @@ async function getBarangayFromCoordinates(lat, lon) {
     }
 
     const data = await response.json();
-    console.log("🗺️ Geocoding response:", data);
+    console.log("🗺️ Full geocoding response:", JSON.stringify(data, null, 2));
 
     const address = data.address || {};
     
+    // Try to get barangay from these fields (in priority order)
     const barangay = address.suburb || 
                      address.neighbourhood || 
                      address.village || 
-                     address.hamlet || 
-                     address.town || 
-                     address.city || 
-                     address.municipality || 
-                     'Unknown Location';
+                     address.hamlet ||
+                     address.quarter ||
+                     address.residential;
     
-    const cleanBarangay = barangay.replace(/^(Barangay|Brgy\.?)\s*/i, '').trim();
+    // If we found a barangay-level location, use it
+    if (barangay && barangay !== address.city && barangay !== address.municipality) {
+      const cleanBarangay = barangay.replace(/^(Barangay|Brgy\.?)\s*/i, '').trim();
+      console.log("📍 Extracted barangay:", cleanBarangay);
+      return cleanBarangay;
+    }
     
-    console.log("📍 Extracted location:", cleanBarangay);
-
-    return cleanBarangay;
+    // Fallback: If no barangay found, check the display_name for clues
+    const displayName = data.display_name || '';
+    const parts = displayName.split(',').map(p => p.trim());
+    
+    // Try to find a part that's not "Oroquieta" or "Oroquieta City"
+    for (const part of parts) {
+      if (part && 
+          part !== 'Oroquieta' && 
+          part !== 'Oroquieta City' &&
+          part !== 'Misamis Occidental' &&
+          part !== 'Philippines' &&
+          !part.match(/^\d+$/)) {
+        console.log("📍 Extracted from display name:", part);
+        return part;
+      }
+    }
+    
+    console.warn("⚠️ Could not determine barangay, using 'Location Not Specified'");
+    return "Location Not Specified";
 
   } catch (error) {
     console.error("❌ Reverse geocoding error:", error);
     return "Unknown Location";
   }
 }
+
 
 window.onload = function () {
   // Get GPS coordinates and reverse geocode
