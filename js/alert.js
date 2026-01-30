@@ -34,40 +34,58 @@ async function getBarangayFromCoordinates(lat, lon) {
 
     const address = data.address || {};
     
-    // Try to get barangay from these fields (in priority order)
-    const barangay = address.suburb || 
-                     address.neighbourhood || 
-                     address.village || 
-                     address.hamlet ||
-                     address.quarter ||
-                     address.residential;
+    // Get purok/subdivision
+    const purok = address.suburb || 
+                  address.neighbourhood || 
+                  address.quarter ||
+                  address.hamlet;
     
-    // If we found a barangay-level location, use it
-    if (barangay && barangay !== address.city && barangay !== address.municipality) {
-      const cleanBarangay = barangay.replace(/^(Barangay|Brgy\.?)\s*/i, '').trim();
-      console.log("📍 Extracted barangay:", cleanBarangay);
-      return cleanBarangay;
-    }
+    // Get barangay (usually in village, town, or municipality level)
+    const barangay = address.village || 
+                     address.town ||
+                     address.city_district;
     
-    // Fallback: If no barangay found, check the display_name for clues
-    const displayName = data.display_name || '';
-    const parts = displayName.split(',').map(p => p.trim());
+    // Combine them intelligently
+    let location = '';
     
-    // Try to find a part that's not "Oroquieta" or "Oroquieta City"
-    for (const part of parts) {
-      if (part && 
-          part !== 'Oroquieta' && 
-          part !== 'Oroquieta City' &&
-          part !== 'Misamis Occidental' &&
-          part !== 'Philippines' &&
-          !part.match(/^\d+$/)) {
-        console.log("📍 Extracted from display name:", part);
-        return part;
+    if (barangay && purok && purok !== barangay) {
+      // Both barangay and purok available
+      location = `${barangay}, ${purok}`;
+    } else if (barangay) {
+      // Only barangay
+      location = barangay;
+    } else if (purok) {
+      // Only purok
+      location = purok;
+    } else {
+      // Try from display_name as fallback
+      const displayName = data.display_name || '';
+      const parts = displayName.split(',').map(p => p.trim());
+      
+      for (const part of parts) {
+        if (part && 
+            part !== 'Oroquieta' && 
+            part !== 'Oroquieta City' &&
+            part !== 'Misamis Occidental' &&
+            part !== 'Philippines' &&
+            !part.match(/^\d+$/)) {
+          location = part;
+          break;
+        }
       }
     }
     
-    console.warn("⚠️ Could not determine barangay, using 'Location Not Specified'");
-    return "Location Not Specified";
+    if (!location) {
+      location = "Location Not Specified";
+    }
+    
+    // Clean up the location string
+    const cleanLocation = location
+      .replace(/^(Barangay|Brgy\.?)\s*/i, '')
+      .trim();
+    
+    console.log("📍 Extracted location:", cleanLocation);
+    return cleanLocation;
 
   } catch (error) {
     console.error("❌ Reverse geocoding error:", error);
